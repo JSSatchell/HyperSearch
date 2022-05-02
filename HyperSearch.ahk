@@ -63,7 +63,7 @@ favURL4 =
 
    Gui, Add, Edit, r1 vinitialQuery x22 y49 w200 h20
    Gui, Add, ListBox, vIndexList x312 y19 w140 h340 gMatchTab, %index%
-   Gui, Add, Tab3, vTabSet x22 y79 w270 h270 -wrap, %index%
+   Gui, Add, Tab3, vTabSet x22 y79 w270 h270 -wrap gMatchIndex, %index%
    Gui, Add, ListBox, vContactsLinks x32 y109 w250 h230 , Test #1
    Gui, Add, UpDown, x262 y109 w20 h240 , UpDown
    i=2
@@ -178,4 +178,10 @@ MatchTab:
    Gui, Submit, noHide
    ;MsgBox, You selected %indexList%
    GuiControl, ChooseString, TabSet, %indexList%
+Return
+
+MatchIndex:
+   Gui, Submit, noHide
+   ;MsgBox, You selected %indexList%
+   GuiControl, ChooseString, IndexList, %TabSet%
 Return
