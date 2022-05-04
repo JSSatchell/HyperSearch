@@ -70,10 +70,10 @@ favURL5 =
    Gui, Add, Edit, r1 vinitialQuery x10 y10 w230 h30
    Gui, Add, Button, Default x250 y10 w50 h20 , Search
    Gui, Add, Button, x10 y40 w50 h20 gFavButton1, %fav1Lbl%
-   Gui, Add, Button, x70 y40 w50 h20 gFavButton2, &2 %fav2Lbl%
-   Gui, Add, Button, x130 y40 w50 h20 gFavButton3, &3 %fav3Lbl%
-   Gui, Add, Button, x190 y40 w50 h20 gFavButton4, &4 %fav4Lbl%
-   Gui, Add, Button, x250 y40 w50 h20 gFavButton5, &5 %fav5Lbl%
+   Gui, Add, Button, x70 y40 w50 h20 gFavButton2, %fav2Lbl%
+   Gui, Add, Button, x130 y40 w50 h20 gFavButton3, %fav3Lbl%
+   Gui, Add, Button, x190 y40 w50 h20 gFavButton4, %fav4Lbl%
+   Gui, Add, Button, x250 y40 w50 h20 gFavButton5, %fav5Lbl%
    ; Generated using SmartGUI Creator 4.0
    Gui, Show, h70 w310, HyperSearch Lite
    Return
