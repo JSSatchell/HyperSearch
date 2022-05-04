@@ -4,11 +4,12 @@ Menu, Tray, Icon, shell32.dll, 210 ; Magnifying Glass Icon
 ; #Warn  ; Enable warnings to assist with detecting common errors.
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
-
+#SingleInstance force
+SendMode Input
 
 ;;;;;Adapted from this thread: https://www.autohotkey.com/board/topic/13404-google-search-on-highlighted-text/
 
-SendMode Input 
+ 
 ;;;;;ORIGINAL CODE FOR IE;;;;;
 ;RegRead, OutputVar, HKEY_CLASSES_ROOT, http\shell\open\command 
 ;StringReplace, OutputVar, OutputVar," 
@@ -23,16 +24,26 @@ if (ProgID = "ChromeHTML")
 if (ProgID = "FirefoxURL")
    Browser := "firefox.exe"
 
-searchEngine := "https://duckduckgo.com/"
+searchEngine := "https://duckduckgo.com/?q="
+;searchEngine := "http://www.google.com/search?hl=en&q="
 
 ;;;;;Insert favorite URLs here to call them with Alt shortcuts;;;;;
+fav1Lbl = Fav &1
 favURL1 = 
+
+fav2Lbl = Fav &2
 favURL2 = 
+
+fav3Lbl = Fav &3
 favURL3 = 
+
+fav4Lbl = Fav &4
 favURL4 = 
 
-;;;;;SEARCH FOR HIGHLIGHTED TEXT;;;;;
+fav5Lbl = Fav &5
+favURL5 = 
 
+;;;;;SEARCH FOR HIGHLIGHTED TEXT;;;;;
 ^#Space:: 
 { 
    BlockInput, on 
@@ -45,6 +56,7 @@ favURL4 =
    { 
       searchQuery=%clipboard% 
       GoSub, GoogleSearch 
+      ;GoogleSearch(clipboard)
    } 
    clipboard = %prevClipboard% 
    return 
@@ -54,104 +66,88 @@ favURL4 =
 ;;;;;ENTER SEARCH TERMS;;;;;
 #Space:: 
 { 
-   Gui, Add, Edit, r1 vinitialQuery x10 y10 w180 h30
-   Gui, Add, Button, Default x200 y10 w50 h20 , Search
-   Gui, Add, Button, x10 y40 w50 h20 , Fav &1
-   Gui, Add, Button, x70 y40 w50 h20 , Fav &2
-   Gui, Add, Button, x130 y40 w50 h20 , Fav &3
-   Gui, Add, Button, x190 y40 w50 h20 , Fav &4
+   Hotkey, #Space, Off
+   Gui, Add, Edit, r1 vinitialQuery x10 y10 w230 h30
+   Gui, Add, Button, Default x250 y10 w50 h20 , Search
+   Gui, Add, Button, x10 y40 w50 h20 gFavButton1, %fav1Lbl%
+   Gui, Add, Button, x70 y40 w50 h20 gFavButton2, &2 %fav2Lbl%
+   Gui, Add, Button, x130 y40 w50 h20 gFavButton3, &3 %fav3Lbl%
+   Gui, Add, Button, x190 y40 w50 h20 gFavButton4, &4 %fav4Lbl%
+   Gui, Add, Button, x250 y40 w50 h20 gFavButton5, &5 %fav5Lbl%
    ; Generated using SmartGUI Creator 4.0
-   Gui, Show, h70 w260, HyperSearch Lite
+   Gui, Show, h70 w310, HyperSearch Lite
    Return
 
-   ButtonFav1:
-   if(favURL1 == "")
-      MsgBox, Favorite 1 is undefined.
-   else {
-      Run, %favURL1%
-      Gui, Destroy
-   }
+   FavButton1:
+      FavButton(1)
    Return
 
-   ButtonFav2:
-   if(favURL1 == "")
-      MsgBox, Favorite 2 is undefined.
-   else {
-      Run, %favURL2%
-      Gui, Destroy
-   }
+   FavButton2:
+      FavButton(2)
    Return
 
-   ButtonFav3:
-   if(favURL1 == "")
-      MsgBox, Favorite 3 is undefined.
-   else {
-      Run, %favURL3%
-      Gui, Destroy
-   }
+   FavButton3:
+      FavButton(3)
    Return
 
-   ButtonFav4:
-   if(favURL4 == "")
-      MsgBox, Favorite 4 is undefined.
-   else {
-      Run, %favURL4%
-      Gui, Destroy
-   }
+   FavButton4:
+      FavButton(4)
+   Return
+
+   FavButton5:
+      FavButton(5)
    Return
 
    ButtonSearch:
       Gui, Submit
       ;MsgBox, %initialQuery%
       if(initialQuery == "") {
+         Hotkey, #Space, On
          Gui, Destroy
       } else{
+         Hotkey, #Space, On
          Gui, Destroy
          searchQuery = %initialQuery%
          GoSub, GoogleSearch
+         ;GoogleSearch(initialQuery)
       }
    Return
 
    GuiClose:
    GuiEscape:
    Gui, Destroy
+   Hotkey, #Space, On
    Return
 }
 
-GoogleSearch: 
-   StringReplace, searchQuery, searchQuery, `r`n, %A_Space%, All 
-   Loop 
-   { 
-      noExtraSpaces=1 
-      StringLeft, leftMost, searchQuery, 1 
-      IfInString, leftMost, %A_Space% 
-      { 
-         StringTrimLeft, searchQuery, searchQuery, 1 
-         noExtraSpaces=0 
-      } 
-      StringRight, rightMost, searchQuery, 1 
-      IfInString, rightMost, %A_Space% 
-      { 
-         StringTrimRight, searchQuery, searchQuery, 1 
-         noExtraSpaces=0 
-      } 
-      If (noExtraSpaces=1) 
-         break 
-   } 
-   StringReplace, searchQuery, searchQuery, \, `%5C, All 
-   StringReplace, searchQuery, searchQuery, %A_Space%, +, All 
-   StringReplace, searchQuery, searchQuery, `%, `%25, All 
-   IfInString, searchQuery, . 
-   { 
-      IfInString, searchQuery, + 
-         ;Run, %browser% http://www.google.com/search?hl=en&q=%searchQuery% 
-		   ;Run, %browser% https://duckduckgo.com/?q=%searchQuery%
-         Run, %browser% %searchEngine%?q=%searchQuery%
-      else 
+GoogleSearch:
+   searchQuery := StrReplace(searchQuery, "`n`r", A_Space)
+   searchQuery := Trim(searchQuery)
+   searchQuery := StrReplace(searchQuery, "\", "`%5C")
+   searchQuery := StrReplace(searchQuery, A_Space, "+")
+   searchQuery := StrReplace(searchQuery, "`%", "`%25")
+   If InStr(searchQuery, ".")
+   {
+      If InStr(searchQuery, "+")
+         Run, %browser% %searchEngine%%searchQuery%  
+      else
          Run, %browser% %searchQuery% 
-   } 
-   else 
-      ;Run, %browser% http://www.google.com/search?hl=en&q=%searchQuery% 
-	   ;Run, %browser% https://duckduckgo.com/?q=%searchQuery%
-      Run, %browser% %searchEngine%?q=%searchQuery%
+   } else
+      Run, %browser% %searchEngine%%searchQuery%
 return
+
+FavButton(val)
+{
+   if(favURL%val% == "")
+      MsgBox, % "Favorite " . val . " is undefined."
+   else {
+      if InStr(favURL%val%, "https://")
+         Run, % favURL%val%
+      else {
+         global searchQuery := favURL%val%
+         GoSub, GoogleSearch         
+      }
+      Hotkey, #Space, On
+      Gui, Destroy
+   }
+}
