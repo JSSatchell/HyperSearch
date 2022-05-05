@@ -1,8 +1,8 @@
-**GENERAL USAGE:**
-
-Preview:
+**Preview:**
 
 ![image](https://user-images.githubusercontent.com/99512204/166970969-f181093f-1e91-4174-80d2-007b428868f4.png)
+
+**GENERAL USAGE:**
 
 Open the search bar with Win + Space or search any highlighted text with Ctrl + Win + Space.
 
