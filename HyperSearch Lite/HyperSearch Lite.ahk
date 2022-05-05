@@ -104,6 +104,7 @@ LoadMenu:
    }
    Menu, Exit, Add, Close Window, DestroyGui
    Menu, Exit, Add, Exit App, ExitApp
+   Menu, MainMenu, Add, [&?], Help, +right
    Menu, MainMenu, Add, [&X], :Exit, +right
    Gui, Menu, MainMenu
 return
@@ -131,17 +132,21 @@ EditFav:
    newLnk := val[3]
    if (val[2] != "" || val[3] != "") {
       newLbl := "&" . indx . " " . val[2]
-      if (val[2] != "")
-         MsgBox,,Favorite Reassigned, % "Favorite " . indx . " is now labelled " . LTrim(newLbl,"&" . indx . " ") . " and links to " . newLnk
-      else
-         MsgBox,,Favorite Reassigned, % "Favorite " . indx . " now links to " . newLnk
+      if (val[2] != ""){
+         if (val[3] = "")
+            MsgBox,,Favorite Reassigned, % "Favorite " . indx . " is now labelled " . LTrim(newLbl,"&" . indx . " ") . "."
+         else
+            MsgBox,,Favorite Reassigned, % "Favorite " . indx . " is now labelled " . LTrim(newLbl,"&" . indx . " ") . " and links to " . newLnk . "."
+      } else
+         MsgBox,,Favorite Reassigned, % "Favorite " . indx . " now links to " . newLnk . "."
    } else {
       newLbl:=""
       MsgBox,,Favorite Erased, % "Favorite " . indx . " has been removed."
    }
-   if (val[2] != "")
+   if (val[2] = "" && val[3] = "" || val[2] != "")
       IniWrite, %newLbl%, HS_Settings.ini, Favorite Labels, Favorite%indx%
-   IniWrite, %newLnk%, HS_Settings.ini, Favorite Links, FavLink%indx%
+   if (val[2] = "" && val[3] = "" || val[3] != "")
+      IniWrite, %newLnk%, HS_Settings.ini, Favorite Links, FavLink%indx%
    GoSub, DestroyGui
 return
 
@@ -192,8 +197,8 @@ SetTheme:
    IniRead, transSel, HS_Settings.ini, Theme, Trans
    if (themeSel = 1) {
       Gui, Font, cWhite
-      Gui, Color, Gray, 161616
-      Menu, MainMenu, Color, Silver
+      Gui, Color, 404040, 1A1A1A
+      Menu, MainMenu, Color, 808080
       Gui +LastFound
    } else {
       Gui, Font, cBlack
@@ -212,6 +217,7 @@ GenerateSettings:
 Default="https://duckduckgo.com/?q="
 DuckDuckGo="https://duckduckgo.com/?q="
 Google="http://www.google.com/search?hl=en&q="
+Bing="https://www.bing.com/search?q="
 
 [Favorite Labels]
 Favorite1=Fav &1
@@ -239,6 +245,11 @@ FavLink9=
 DkMd=1
 Trans=200
    ), HS_Settings.ini
+return
+
+Help:
+   Run, % "https://github.com/JSSatchell/HyperSearch/blob/main/HyperSearch%20Lite/READ%20ME.md"
+   GoSub, DestroyGui
 return
 
 DestroyGui:
