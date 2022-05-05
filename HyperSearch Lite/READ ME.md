@@ -22,6 +22,10 @@ To clear a selection type the number of the favorite followed by only ">"
 
     1>
    
+To set a new label for a favorite, simple omit the last ">"
+
+    1>GMail
+
 To set a new link for an existing favorite without updating the label, use ">>"
 
     1>>drive.google.com
