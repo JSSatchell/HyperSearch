@@ -39,21 +39,16 @@ IniRead, searchEngine, HS_Settings.ini, Search Engine, Default
    return 
 }
 
-
 ;;;;;ENTER SEARCH TERMS;;;;;
 #Space:: 
 { 
    Hotkey, #Space, Off
-   Gui, Font, White
    Gui Menu
    Gosub, LoadMenu
-   Gui, Add, Edit, r1 vUsrIn x10 y10 w230 h30 cWhite
+   GoSub, SetTheme
+   Gui, Add, Edit, r1 vUsrIn x10 y10 w230 h30
    Gui, Add, Button, Default x250 y10 w50 h20 , Submit
    Gui -Caption
-   Gui, Color, Gray, 161616
-   Menu, MainMenu, Color, Silver
-   Gui +LastFound
-   WinSet, Transparent, 200
    Gui, Show, h40 w310, HyperSearch Lite
    Return
 
@@ -67,15 +62,15 @@ ButtonSubmit:
    Gui, Submit
    ;MsgBox, %UsrIn%
    if (UsrIn != ""){
-      if (RegExMatch(UsrIn, "^[1-5]>.*")){
+      if (RegExMatch(UsrIn, "^[1-9]>.*")){
          GoSub, EditFav
       } else if (UsrIn ~= "i)^search>.*"){
          GoSub, EditSearch
+      } else if (UsrIn ~= "i)^set>.*"){
+         GoSub, EditSettings
       } else {
-      ;MsgBox % searchEngine
       searchQuery = %UsrIn%
       GoSub, GoogleSearch
-      ;GoogleSearch(UsrIn)
       } 
    }
    GoSub, DestroyGui
@@ -98,25 +93,23 @@ GoogleSearch:
       Run, %browser% %searchEngine%%searchQuery%
 return
 
+LoadMenu:
+   Gui Menu
+   i:=1
+   while(i<=9){
+      IniRead, currentFav, HS_Settings.ini, Favorite Labels, Favorite%i%
+      if (currentFav != "")
+         Menu, MainMenu, Add, %currentFav%, FavButtonClick
+      i++
+   }
+   Menu, Exit, Add, Close Window, DestroyGui
+   Menu, Exit, Add, Exit App, ExitApp
+   Menu, MainMenu, Add, [&X], :Exit, +right
+   Gui, Menu, MainMenu
+return
 
-FavButton1:
-   FavButton(1)
-Return
-
-FavButton2:
-   FavButton(2)
-Return
-
-FavButton3:
-   FavButton(3)
-Return
-
-FavButton4:
-   FavButton(4)
-Return
-
-FavButton5:
-   FavButton(5)
+FavButtonClick:
+   FavButton(A_ThisMenuItemPos)
 Return
 
 FavButton(val)
@@ -135,11 +128,20 @@ EditFav:
    Menu, MainMenu, Delete
    indx:=SubStr(UsrIn,1,1)
    val := StrSplit(UsrIn,">",,3)
-   newLbl := "&" . indx . " " . val[2]
    newLnk := val[3]
-   IniWrite, %newLbl%, HS_Settings.ini, Favorite Labels, Favorite%indx%
+   if (val[2] != "" || val[3] != "") {
+      newLbl := "&" . indx . " " . val[2]
+      if (val[2] != "")
+         MsgBox,,Favorite Reassigned, % "Favorite " . indx . " is now labelled " . LTrim(newLbl,"&" . indx . " ") . " and links to " . newLnk
+      else
+         MsgBox,,Favorite Reassigned, % "Favorite " . indx . " now links to " . newLnk
+   } else {
+      newLbl:=""
+      MsgBox,,Favorite Erased, % "Favorite " . indx . " has been removed."
+   }
+   if (val[2] != "")
+      IniWrite, %newLbl%, HS_Settings.ini, Favorite Labels, Favorite%indx%
    IniWrite, %newLnk%, HS_Settings.ini, Favorite Links, FavLink%indx%
-   MsgBox,,Favorite Reassigned, % "Favorite " . indx . " is now labelled " . LTrim(newLbl,"&") . " and links to " . newLnk
    GoSub, DestroyGui
 return
 
@@ -156,22 +158,51 @@ EditSearch:
       searchEngine:="""" . Google . """"
       IniWrite, %searchEngine%, HS_Settings.ini, Search Engine, Default
       MsgBox, Your default search engine is now set to Google.
+   } else if (search[2] ~= "i)Bing") {
+      IniRead, Bing, HS_Settings.ini, Search Engine, Bing
+      searchEngine:="""" . Bing . """"
+      IniWrite, %searchEngine%, HS_Settings.ini, Search Engine, Default
+      MsgBox, Your default search engine is now set to Bing.
    } else
-      MsgBox, Invalid search engine. Available options:`nGoogle`nDuck Duck Go
+      MsgBox, Invalid search engine. Available options:`n-Google`n-Duck Duck Go`n-Bing
 return
 
-LoadMenu:
-   Gui Menu
-   i=1
-   while(i<=5){
-      IniRead, currentFav, HS_Settings.ini, Favorite Labels, Favorite%i%
-      Menu, MainMenu, Add, %currentFav%, FavButton%i%
-      i++
+EditSettings:
+   search:=StrSplit(UsrIn,">",,3)
+   if (search[2] ~= "i)d.rk") {
+      IniWrite, 1, HS_Settings.ini, Theme, DkMd
+      MsgBox, Dark theme applied.
+   } else if (search[2] ~= "i)light") {
+      IniWrite, 0, HS_Settings.ini, Theme, DkMd
+      MsgBox, Light theme applied.
+   } else if (search[2] ~= "i)trans.*") {
+      transVal := search[3]
+      if transVal is integer
+      {
+         transPercent := Round((transVal / 100) * 255)
+         IniWrite, %transPercent%, HS_Settings.ini, Theme, Trans
+         MsgBox, % "Transparency is set to " . transVal . "%"
+      } else
+         MsgBox, Value should be a number between 1-255.
    }
-   Menu, Exit, Add, Close Window, DestroyGui
-   Menu, Exit, Add, Exit App, ExitApp
-   Menu, MainMenu, Add, [&X], :Exit, +right
-   Gui, Menu, MainMenu
+return
+
+SetTheme:
+   IniRead, themeSel, HS_Settings.ini, Theme, DkMd
+   IniRead, transSel, HS_Settings.ini, Theme, Trans
+   if (themeSel = 1) {
+      Gui, Font, cWhite
+      Gui, Color, Gray, 161616
+      Menu, MainMenu, Color, Silver
+      Gui +LastFound
+   } else {
+      Gui, Font, cBlack
+      GuiControl, Font, Submit
+      Gui, Color, Silver, White
+      Menu, MainMenu, Color, White
+      Gui +LastFound
+   }
+   WinSet, Transparent, %transSel%
 return
 
 GenerateSettings:
@@ -188,6 +219,10 @@ Favorite2=Fav &2
 Favorite3=Fav &3
 Favorite4=Fav &4
 Favorite5=Fav &5
+Favorite6=
+Favorite7=
+Favorite8=
+Favorite9=
 
 [Favorite Links]
 FavLink1=
@@ -195,6 +230,10 @@ FavLink2=
 FavLink3=
 FavLink4=
 FavLink5=
+FavLink6=
+FavLink7=
+FavLink8=
+FavLink9=
 
 [Theme]
 DkMd=1
