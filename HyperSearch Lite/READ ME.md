@@ -6,7 +6,7 @@ To update favorites type a number 1-5 and then ">" followed by your desired labe
  
 – For example: 1>GMail>mail.google.com
 
-To update the search engine, type "Search>" and then either "Google" or "DuckDuckGo". DuckDuckGo is currently the default.
+To update the search engine, type "Search>" and then either "Google", "Bing", or "DuckDuckGo". DuckDuckGo is currently the default.
 
 The app will stay open unless closed from the tray or "Exit App" from the "X" menu.
 
