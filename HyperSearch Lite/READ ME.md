@@ -10,6 +10,8 @@ Navigate the favorites menu easily with Alt + 1-9 or Alt + X for the exit menu.
 
 The app will stay open in the system tray unless closed from the tray or via "Exit App" from the "X" menu.
 
+When the app is launched for the first time it will create a .ini sidecar file. If the .exe is moved the .ini must stay in the same root folder or the settings will be reset.
+
 ---
 
 **UPDATE FAVORITES:**
