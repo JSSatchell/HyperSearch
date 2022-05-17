@@ -1,11 +1,19 @@
 # HyperSearch
 Instant internet search, minus the distractions.
 
+**PREVIEW**
+
+![image](https://user-images.githubusercontent.com/99512204/168928729-1a696160-30fa-4657-a4bf-3b37fe9a349f.png)
+
 HyperSearch is a bookmark managing utility that focuses on speed and direct access to what your looking for without the fluff and distractions of the internet.
 
 It also provides convenient hotkeys for searching any highlighted text as well as a search bar to search the internet before you've even opened your browser.
 
 HyperSearch Lite is a streamlined version of the searchbar and favorites without the bookmark manager.
+
+**PREVIEW**
+
+![image](https://user-images.githubusercontent.com/99512204/166970969-f181093f-1e91-4174-80d2-007b428868f4.png)
 
 HyperSearch Lite is also built into HyperSearch and can be activated by typing "Set>Min"
 
@@ -21,7 +29,7 @@ Navigate the favorites menu easily with Alt + 1-9 or Alt + X for the exit menu.
 
 The app will stay open in the system tray unless closed from the tray or via "Exit App" from the "X" menu.
 
-When the app is launched for the first time it will create a .ini sidecar file. If the .exe is moved the .ini must stay in the same root folder or the settings will be reset.
+When the app is launched for the first time it will create HS_Settings.ini and HSR_Master.csv sidecar files. If the .exe is moved the .ini must stay in the same root folder or the settings will be reset. Do not rename these files or new ones will be created the next time the app is launced and settings will be reset to default.
 
 ---
 
