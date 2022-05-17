@@ -19,6 +19,8 @@ If !FileExist("HS_Settings.ini") {
 }
 IniRead, searchEngine, HS_Settings.ini, Search Engine, Default
 
+lastIndex:=1
+
 ;;;;;ENTER SEARCH TERMS;;;;;
 #Space:: 
 { 
@@ -29,6 +31,7 @@ IniRead, searchEngine, HS_Settings.ini, Search Engine, Default
    HSR_Array:=[]
    indexList=
    indexArray:=[]
+   ;indexIndex:=0
    If FileExist("HSR_Master.csv")
       FileRead, HSR_String, HSR_Master.csv
    else {
@@ -54,41 +57,17 @@ IniRead, searchEngine, HS_Settings.ini, Search Engine, Default
             }
          }
          HSR_Array[r,c]:=A_LoopField
-         ;MsgBox, % r . "`n" . c
-         ;MsgBox, % HSR_Array[r,c] . "`n" . r . ", " . c
       }
+      indexIndex++
    }
-   Gui, Add, Edit, r1 vUsrIn x160 y10 w230 h30 gInputAlgorithm
-   Gui, Add, ListBox, vIndex x10 y10 w140 h340 VScroll Choose1 sort gLoadLinks, %indexList%
-   /*
-   Gui, Add, Tab3, vTabSet x160 y40 w290 h310 -wrap gMatchIndex, %indexList%
-   currentTab=1
-   while (currentTab <= indexArray.length())
-   {
-      currentSubCatList=
-      subCatArray%currentTab%:=[]
-      xPos=2
-      while (HSR_Array[xPos,1] != "") { ; Run down full list
-         dup := InStr(currentSubCatList,HSR_Array[xPos,2]) ; Detect duplicates
-         if (dup==0 && indexArray[currentTab]==HSR_Array[xPos,1]){ ; Only add if category matches tab and not duplicate
-            currentSubCatList .= HSR_Array[xPos,2] . "|" ; Build subcategory list for listbox
-            subCatArray%currentTab%.Push(HSR_Array[xPos,2])
-         }
-         xPos++
-      }
-      Gui, Tab, %currentTab%
-      Gui, Add, ListBox, vSubCat%currentTab% x170 y65 w135 h280 Choose1 gLoadItems, %currentSubCatList%
-      Gui, Add, ListBox, vItem%currentTab% x305 y65 w135 h280 Choose1 gAppendLinks
-      ;Gui, Add, UpDown, x262 y109 w20 h230 , UpDown
-      currentTab++
-   }
-   Gui, Tab
-   */
-   Gui, Add, ListBox, vLink x160 y40 w290 h310 Choose1 AltSubmit gActivateLinks
-   Gui, Add, Button, Default x400 y10 w50 h20 , Submit
+   Gui, Add, Edit, r1 vUsrIn x160 y10 w220 h30 gInputAlgorithm
+   Gui, Add, ListBox, vIndex x10 y10 w140 h330 VScroll Choose1 sort -AltSubmit gLoadLinks, %indexList%
+   Gui, Add, ListBox, vLink x160 y40 w280 h300 Choose1 AltSubmit gActivateLinks
+   Gui, Add, Button, Default x390 y10 w50 h20 , Submit
     ; Generated UsrIng SmartGUI Creator 4.0
    Gui -Caption
-   Gui, Show, h360 w460, HyperSearch
+   Gui, Show, h350 w450, HyperSearch
+   Control, Choose, %lastIndex%, Listbox1
    Return
 
    GuiClose:
@@ -117,40 +96,37 @@ IniRead, searchEngine, HS_Settings.ini, Search Engine, Default
 
 GoogleSearch:
 ;;;;;Adapted from this thread: https://www.autohotkey.com/board/topic/13404-google-search-on-highlighted-text/
-   searchQuery := StrReplace(searchQuery, "`n`r", A_Space)
-   searchQuery := Trim(searchQuery)
-   searchQuery := StrReplace(searchQuery, "\", "`%5C")
-   searchQuery := StrReplace(searchQuery, A_Space, "+")
-   searchQuery := StrReplace(searchQuery, "`%", "`%25")
-   If InStr(searchQuery, ".")
-   {
-      If InStr(searchQuery, "+")
-         Run, %browser% %searchEngine%%searchQuery%  
-      else
-         Run, %browser% %searchQuery% 
-   } else
-      Run, %browser% %searchEngine%%searchQuery%
+   if (searchQuery != ""){
+      searchQuery := StrReplace(searchQuery, "`n`r", A_Space)
+      searchQuery := Trim(searchQuery)
+      searchQuery := StrReplace(searchQuery, "\", "`%5C")
+      searchQuery := StrReplace(searchQuery, A_Space, "+")
+      searchQuery := StrReplace(searchQuery, "`%", "`%25")
+      If InStr(searchQuery, ".")
+      {
+         If InStr(searchQuery, "+")
+            Run, %browser% %searchEngine%%searchQuery%  
+         else
+            Run, %browser% %searchQuery% 
+      } else
+         Run, %browser% %searchEngine%%searchQuery%
+      GoSub, DestroyGui
+   }
 return
-
-MatchTab:
-   Gui, Submit, noHide
-   ;MsgBox, You selected %indexList%
-   GuiControl, ChooseString, TabSet, %Index%
-Return
-
-MatchIndex:
-   Gui, Submit, noHide
-   ;MsgBox, You selected %indexList%
-   GuiControl, ChooseString, Index, %TabSet%
-Return
 
 ButtonSubmit:
    Gui, Submit, noHide
    GuiControlGet, activeControl, Focus
    ;MsgBox % activeControl
-   if (activeControl == "Edit1") {
+   if (activeControl == "ListBox2") {
+      searchQuery := linkArray[Link,2]
+      ;MsgBox % linkArray[Link]
+      GoSub, GoogleSearch
+   } else {
       if (UsrIn != ""){
-         if (RegExMatch(UsrIn, "^[1-9]>.*")){
+         if (UsrIn ~= "\*.*"){
+            GuiControl, focus, Link
+         } else if (RegExMatch(UsrIn, "^[1-9]>.*")){
             GoSub, EditFav
             GoSub, DestroyGui
          } else if (UsrIn ~= "i)^search>.*"){
@@ -161,17 +137,18 @@ ButtonSubmit:
             GoSub, DestroyGui
          } else if (UsrIn ~= "\*.*"){
             GuiControl, focus, Link
+         } else if (UsrIn ~= ".*\+.*"){
+            GoSub, AppendLinks
+            GoSub, DestroyGui
+         } else if (UsrIn ~= "i)Del.*\-.*"){
+            GoSub, RemoveLinks
+            GoSub, DestroyGui
          } else {
-         searchQuery = %UsrIn%
-         GoSub, GoogleSearch
-         GoSub, DestroyGui
+            searchQuery = %UsrIn%
+            GoSub, GoogleSearch
+            GoSub, DestroyGui
          } 
       }
-   } else if (activeControl == "ListBox2") {
-      searchQuery := linkArray[Link]
-      ;MsgBox % linkArray[Link]
-      GoSub, GoogleSearch
-      GoSub, DestroyGui
    }
    ;MsgBox, %UsrIn%
 
@@ -183,29 +160,7 @@ InputAlgorithm:
    ;GuiControl, ChooseString, IndexList, |%UsrIn%
    if(RegExMatch(UsrIn, "^\*.*"))
    {
-      ;Input, inputTest, L5 V, {tab}
-      try GuiControl, ChooseString, Index, % "|" . LTrim(UsrIn, "*")
-      catch {
-         try {
-            GuiControl, Choose, TabSet, 2 
-            GuiControl, ChooseString, SubCat2, % "|" . LTrim(UsrIn, "*")
-            GuiControl, Focus, SubCat2
-            GuiControl, Focus, UsrIn
-         }
-         catch {
-            try {
-               GuiControl, Choose, TabSet, 2 
-               GuiControl, ChooseString, Item2, % "|" . LTrim(UsrIn, "*")
-               GuiControl, Focus, Item2
-               GuiControl, Focus, UsrIn
-            }
-            catch {
-               ;MsgBox, No result found
-               return
-            }
-         }
-      }
-      ;MsgBox, % "UsrIn >" . LTrim(UsrIn, "*") . "`ninputTest >" . inputTest
+      GuiControl, ChooseString, index, % "|" . LTrim(UsrIn, "*")
    }
 return
 
@@ -225,78 +180,160 @@ LoadMenu:
    Gui, Menu, MainMenu
 return
 
-LoadItems:
-   Gui, Submit, noHide
-   itemList=
-   itemIndex:=SubStr(A_GuiControl, 0)
-   ;indexUp:=itemIndex+1
-   ;MsgBox % A_GuiControl . "`n" . itemIndex
-   xPos=2
-   while (HSR_Array[xPos,1] != "") { ; Run down full list
-      dup := InStr(itemList,HSR_Array[xPos,3]) ; Detect duplicates
-      if (dup==0 && HSR_Array[xPos,2]==subCat%itemIndex%){ ; Only add if category matches tab and not duplicate
-         itemList .= HSR_Array[xPos,3] . "|" ; Build subcategory list for listbox
-         itemArray.Push(HSR_Array[xPos,3])
-      }
-      xPos++
-   }
-   ;MsgBox % itemList
-   ;GuiControl, -Redraw, Item2
-   GuiControl,,Item%itemIndex%, |
-   GuiControl,,Item%itemIndex%, %itemList%
-   GuiControl, Focus, Item%itemIndex%
-   ;GuiControl, +Redraw, Item2
-return
-
 LoadLinks:
    Gui, Submit, noHide
    linkCell=
    labelList=
-   linkList=
-   labelArray := []
    linkArray := []
-   xPos=2
-   while (HSR_Array[xPos,1] != "") { ; Run down full list
-      match := InStr(HSR_Array[xPos,1],index)
+   Loop % HSR_Array.MaxIndex()
+   {
+      match := InStr(index,HSR_Array[A_Index,1])
       ;MsgBox % HSR_Array[xPos,2] . "`n" . index
       if (match!=0) {
-         linkCell .= HSR_Array[xPos,2]
+         linkCell .= HSR_Array[A_Index,2]
          break
-      } else
-         xPos++
+      }
    }
    newPos:=1
+   labelIndex:=1
    while (RegExMatch(linkCell, "O)\[(.*?)]", currentLabel, StartingPos := newPos) != 0) {
-      labelArray.push(currentLabel[1])
-      labelList .= currentLabel[1] . "|"
-      newPos := currentLabel.Pos(1) + 2
+      if (labelIndex<10)
+         labelList .= "0" . labelIndex . ".  " . currentLabel[1] . "|"
+      else
+         labelList .= labelIndex . ".  " . currentLabel[1] . "|"
+      newPos+=2
+      RegExMatch(linkCell, "O)\((.*?)\)", currentLink, StartingPos := newPos)
+      linkArray[labelIndex,1]:=currentLabel[1]
+      linkArray[labelIndex,2]:=currentLink[1]
+      newPos := currentLink.Pos(1)
+      labelIndex++
    }
-   newPos:=1
-   while (RegExMatch(linkCell, "O)\((.*?)\)", currentLink, StartingPos := newPos) != 0) {
-      linkArray.push(currentLink[1])
-      linkList .= currentLink[1] . "|"
-      newPos := currentLink.Pos(1) + 2
-   }
-   ;MsgBox % "Labels:`n" . labelList . "`n`nLinks:`n" . linkList
    GuiControl,,Link, |
    GuiControl,,Link, %labelList%
    GuiControl, Choose, Link, 1
-   ;GuiControl, Focus, Link
 return
 
 
 ActivateLinks:
    Gui, Submit, noHide
    if (A_GuiEvent == "DoubleClick") {
-      searchQuery := linkArray[Link]
+      ;MsgBox % linkArray[Link,1]
+      searchQuery := linkArray[Link,2]
       ;MsgBox % linkArray[Link]
       GoSub, GoogleSearch
-      GoSub, DestroyGui
    }
 return
 
 AppendLinks:
+   Gui, Submit, noHide
+   linkString=
+   ; Sample: 1IndexLabel+2LinkName+3URL
+   ; Sample: 1Buffer+2LinkIndex+3LinkName+4URL
+   linkTxt:=StrSplit(UsrIn,"+",,4)
+   linkIndex:=linkTxt[2]
+   ;MsgBox % indexLabel . "`n" . linkIndex . "`n" . linkName . "`n" . linkURL
+   if (linkTxt[1] != "") {
+      if (linkTxt[2] != "" && linkTxt[3] != "") {
+         appendTxt:="`n""" . linkTxt[1] . """," . """[" . linkTxt[2] . "](" . linkTxt[3] . ")"""
+         FileAppend, %appendTxt%, HSR_Master.csv
+         return
+      }
+   } else if linkIndex is integer
+   {
+      linkArray.InsertAt(linkTxt[2],[linkTxt[3],linkTxt[4]])
+      Loop % linkArray.MaxIndex()
+      {
+         linkString .= "[" . linkArray[A_Index,1] . "](" . linkArray[A_Index,2] . ")"
+      }
+   } else {
+      ;linkString=
+      linkArray.InsertAt(1,[linkTxt[2],linkTxt[3]])
+      Loop % linkArray.MaxIndex()
+      {
+         linkString .= "[" . linkArray[A_Index,1] . "](" . linkArray[A_Index,2] . ")"
+      }
+   }
+   ;MsgBox % linkString
+   Loop % HSR_Array.MaxIndex()
+   {
+      match := InStr(index,HSR_Array[A_Index,1])
+      ;MsgBox % HSR_Array[xPos,2] . "`n" . index
+      if (match!=0) {
+         HSR_Array[A_Index,2]:=linkString
+         ;MsgBox % linkString
+         break
+      }
+   }
+   GoSub, SaveHSR
 
+   ;MsgBox % appendTxt
+return
+
+RemoveLinks:
+   Gui, Submit, noHide
+   removeTxt:=StrSplit(UsrIn,"-",,3)
+   linkString=
+   ;Sample: 1DELETE-2LinkIndex-3LinkIndex
+   if (removeTxt[2] != "") {
+      MsgBox, 4, Continue?, % "Do you want to remove the link " . linkArray[removeTxt[2],1] . "?"
+      IfMsgBox, No
+         Return
+      IfMsgBox, Yes
+      {
+         linkArray.RemoveAt(removeTxt[2])
+         Loop % linkArray.MaxIndex()
+         {
+            linkString .= "[" . linkArray[A_Index,1] . "](" . linkArray[A_Index,2] . ")"
+         }
+      }
+   } else {
+      MsgBox, 4, Continue?, Do you want to delete all of the data in %index%?
+      ifMsgBox, No
+         return
+      IfMSgBox, Yes
+      {
+         Loop % HSR_Array.MaxIndex()
+         {
+            match := InStr(index,HSR_Array[A_Index,1])
+            ;MsgBox % HSR_Array[xPos,2] . "`n" . index
+            if (match!=0) {
+               HSR_Array.RemoveAt(A_Index)
+               ;MsgBox % linkString
+               break
+            }
+         }
+      }
+   }
+   ;MsgBox % linkString
+   Loop % HSR_Array.MaxIndex()
+   {
+      match := InStr(index,HSR_Array[A_Index,1])
+      ;MsgBox % HSR_Array[xPos,2] . "`n" . index
+      if (match!=0) {
+         HSR_Array[A_Index,2]:=linkString
+         ;MsgBox % linkString
+         break
+      }
+   }
+
+   GoSub, SaveHSR
+return
+
+SaveHSR:
+   HSR_String=
+   Loop, % HSR_Array.MaxIndex()   ; concat string array
+   {
+      r:=A_Index
+      Loop, % HSR_Array[A_Index].MaxIndex()
+      {
+         HSR_String .= A_Index == HSR_Array[r].MaxIndex() ? """" . HSR_Array[r,A_Index] . """" : """" . HSR_Array[r,A_Index] . ""","
+      }
+      if (A_Index!=HSR_Array.MaxIndex())
+         HSR_String .= "`n"
+   }
+   ;MsgBox % HSR_String
+   FileDelete,HSR_Master.csv
+   FileAppend,%HSR_String%, HSR_Master.csv
 return
 
 FavButtonClick:
@@ -443,6 +480,11 @@ return
 
 DestroyGui:
    Hotkey, #Space, On
+   GuiControl,+AltSubmit,Index
+   GuiControlGet,lastIndex,,Index
+   HSR_String=
+   HSR_Array=
+   linkArray=
    Gui, Destroy
 return
 
