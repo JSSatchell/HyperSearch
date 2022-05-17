@@ -29,27 +29,38 @@ lastIndex:=1
 ;;;;;ENTER SEARCH TERMS;;;;;
 #Space:: 
 { 
+   IniRead, min, HS_Settings.ini, Theme, MinMode
    Hotkey, #Space, Off
-   Gui Menu
-   Gosub, LoadMenu
-   GoSub, SetTheme
-   HSR_Array:=[]
-   indexList=
-   indexArray:=[]
-   FileRead, HSR_String, HSR_Master.csv
-   ;indexIndex:=0
-   ;MsgBox, %HSR_String%
-   GoSub, BuildHSRArray
-   Gui, Add, Edit, r1 vUsrIn x160 y10 w220 h30 gInputAlgorithm
-   Gui, Add, ListBox, vIndex x10 y10 w140 h330 VScroll Choose1 sort -AltSubmit gLoadLinks, %indexList%
-   Gui, Add, ListBox, vLink x160 y40 w280 h300 Choose1 AltSubmit gActivateLinks
-   Gui, Add, Button, Default x390 y10 w50 h20 , Submit
-    ; Generated UsrIng SmartGUI Creator 4.0
-   Gui -Caption
-   Gui, Show, h350 w450, HyperSearch
-   Control, Choose, %lastIndex%, Listbox1
-   Return
-
+   if (min == 1) {
+      Gui Menu
+      Gosub, LoadMenu
+      GoSub, SetTheme
+      Gui, Add, Edit, r1 vUsrIn x10 y10 w230 h30
+      Gui, Add, Button, Default x250 y10 w50 h20 , Submit
+      Gui -Caption
+      Gui, Show, h40 w310, HyperSearch Lite
+      Return
+   } else {
+      Gui Menu
+      Gosub, LoadMenu
+      GoSub, SetTheme
+      HSR_Array:=[]
+      indexList=
+      indexArray:=[]
+      FileRead, HSR_String, HSR_Master.csv
+      ;indexIndex:=0
+      ;MsgBox, %HSR_String%
+      GoSub, BuildHSRArray
+      Gui, Add, Edit, r1 vUsrIn x160 y10 w220 h30 gInputAlgorithm
+      Gui, Add, ListBox, vIndex x10 y10 w140 h330 VScroll Choose1 sort -AltSubmit gLoadLinks, %indexList%
+      Gui, Add, ListBox, vLink x160 y40 w280 h300 Choose1 AltSubmit gActivateLinks
+      Gui, Add, Button, Default x390 y10 w50 h20 , Submit
+      ; Generated UsrIng SmartGUI Creator 4.0
+      Gui -Caption
+      Gui, Show, h350 w450, HyperSearch
+      Control, Choose, %lastIndex%, Listbox1
+      Return
+   }
    GuiClose:
    GuiEscape:
       GoSub, DestroyGui
@@ -442,6 +453,12 @@ EditSettings:
    } else if (search[2] ~= "i)light") {
       IniWrite, 0, HS_Settings.ini, Theme, DkMd
       MsgBox, Light theme applied.
+   } else if (search[2] ~= "i)min") {
+      IniWrite, 1, HS_Settings.ini, Theme, MinMode
+      MsgBox, Min mode applied.
+   } else if (search[2] ~= "i)max") {
+      IniWrite, 0, HS_Settings.ini, Theme, MinMode
+      MsgBox, Max mode applied.
    } else if (search[2] ~= "i)trans.*") {
       transVal := search[3]
       if transVal is integer
