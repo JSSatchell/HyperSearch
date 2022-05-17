@@ -25,8 +25,6 @@ HyperSearch Lite is also built into HyperSearch and can be activated by typing "
 
 Open the GUI with Win + Space or search any highlighted text with Ctrl + Win + Space.
 
-Navigate the favorites menu easily with Alt + 1-9 or Alt + X for the exit menu.
-
 The app will stay open in the system tray unless closed from the tray or via "Exit App" from the "X" menu.
 
 When the app is launched for the first time it will create HS_Settings.ini and HSR_Master.csv sidecar files. If the .exe is moved the .ini must stay in the same root folder or the settings will be reset. Do not rename these files or new ones will be created the next time the app is launced and settings will be reset to default.
@@ -35,13 +33,15 @@ When the app is launched for the first time it will create HS_Settings.ini and H
 
 **NAVIGATION**
 
+Navigate the favorites menu easily with Alt + 1-9 or Alt + X for the exit menu.
+
 Type in the search bar and press enter to search the internet via your default search engine (see changing the default search engine below)
 
 Type * at the beginning of your search to search the index on the left instead
 
     *Category Name
     
-If the search starts with * pressing Enter will set the focus to the links window below the search bar. Pressing enter again will activate the highlighted link.
+If the search starts with * pressing Enter will set the focus to the links window below the search bar. Pressing Enter again will activate the highlighted link.
 
 If focus is on the search bar, Tab will first go to the index which can be navigated by pressing the letter corresponding to the first letter of the desired category. A second Tab will highlight the links window.
 
