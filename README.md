@@ -13,7 +13,7 @@ HyperSearch Lite is also built into HyperSearch and can be activated by typing "
 
 ---
 
-**GENERAL USAGE:**
+**GENERAL USAGE**
 
 Open the GUI with Win + Space or search any highlighted text with Ctrl + Win + Space.
 
@@ -41,39 +41,39 @@ If focus is on the search bar, Tab will first go to the index which can be navig
 
 **EDITING LINKS**
 
-To add a category type the category name and "+"
+To add a category, type the category name and "+"
 
     Category Name+
     
-To add a link to the current category type "+" followed the name of the link followed by "+" followed by the URL
+To add a link to the current category, type "+" followed the name of the link followed by "+" followed by the URL. New links without a specified position will be added to the top of the links list
 
     +GMail+mail.google.com
     
-To add a link at a specific position type "+" followed by the position number followed by "+" followed by the link name followed by "+" followed by the URL
+To add a link at a specific position, type "+" followed by the position number followed by "+" followed by the link name followed by "+" followed by the URL
 
     +2+Calendar+calendar.google.com
     
-To remove the current link type "Delete-" and select "Yes" on the prompt
+To remove the current link, type "Delete-" and select "Yes" on the prompt
 
     Delete-
     
-To remove a link at a specific position type "Delete-" followed by the position number and select "Yes" on the prompt
+To remove a link at a specific position, type "Delete-" followed by the position number and select "Yes" on the prompt
 
     Delete-2
 
-To remove the current category type "Delete--" and select "Yes" on the prompt
+To remove the current category, type "Delete--" and select "Yes" on the prompt
 
     Delete--
 
 ---
 
-**UPDATE FAVORITES:**
+**UPDATE FAVORITES**
 
-To update favorites type a number 1-9 and then ">" followed by your desired label name then ">" followed by the link URL. For example:
+To update favorites, type a number 1-9 and then ">" followed by your desired label name then ">" followed by the link URL. For example:
  
     1>GMail>mail.google.com
     
-To clear a selection type the number of the favorite followed by only ">"
+To clear a selection, type the number of the favorite followed by only ">"
 
     1>
    
@@ -99,18 +99,18 @@ To update the search engine, type "Search>" and then either "Google", "Bing", or
 
 Beginthe search with "Set>"
 
-To set the interface to the more streamlined one of HyperSearch Lite type "Min"
+To set the interface to the more streamlined one of HyperSearch Lite, type "Min"
 
     Set>Min
     
-To return to the full HyperSearch interface type "Max"
+To return to the full HyperSearch interface, type "Max"
 
     Set>Max
 
-To set the mode choose either "Dark" or "Light". Dark is the default
+To set the mode, type either "Dark" or "Light". Dark is the default
 
     Set>Light
     
-To set the transparency enter a number between 1-100. Default is 80%
+To set the transparency, enter a number between 1-100. Default is 80%
 
     Set>Transparency>80
