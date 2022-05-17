@@ -7,6 +7,10 @@ It also provides convenient hotkeys for searching any highlighted text as well a
 
 HyperSearch Lite is a streamlined version of the searchbar and favorites without the bookmark manager.
 
+HyperSearch Lite is also built into HyperSearch and can be activated by typing "Set>Min"
+
+    Set>Min
+
 ---
 
 **GENERAL USAGE:**
@@ -92,6 +96,16 @@ To update the search engine, type "Search>" and then either "Google", "Bing", or
 ---
 
 **UPDATE THE SETTINGS**
+
+Beginthe search with "Set>"
+
+To set the interface to the more streamlined one of HyperSearch Lite type "Min"
+
+    Set>Min
+    
+To return to the full HyperSearch interface type "Max"
+
+    Set>Max
 
 To set the mode choose either "Dark" or "Light". Dark is the default
 
