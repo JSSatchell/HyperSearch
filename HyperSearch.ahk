@@ -19,6 +19,11 @@ If !FileExist("HS_Settings.ini") {
 }
 IniRead, searchEngine, HS_Settings.ini, Search Engine, Default
 
+If !FileExist("HSR_Master.csv") {
+   GoSub, GenerateHSR
+}
+;FileRead, HSR_String, HSR_Master.csv
+
 lastIndex:=1
 
 ;;;;;ENTER SEARCH TERMS;;;;;
@@ -31,35 +36,10 @@ lastIndex:=1
    HSR_Array:=[]
    indexList=
    indexArray:=[]
+   FileRead, HSR_String, HSR_Master.csv
    ;indexIndex:=0
-   If FileExist("HSR_Master.csv")
-      FileRead, HSR_String, HSR_Master.csv
-   else {
-      FileAppend,
-      (
-         "Category Name","SubCategory Name","Title","Links","URLs"
-      ), HSR_Master.csv
-   }
    ;MsgBox, %HSR_String%
-   Loop, Parse, HSR_String, `n, `r ; Build HSR_Array
-   {
-      r:=A_Index ; Row number
-      ;MsgBox, % A_LoopField
-      Loop, Parse, A_LoopField, CSV
-      {
-         c:=A_Index ; Column number
-         if (A_Index==1 && r>1) ; Only search first column
-         {
-            dup := InStr(indexList,A_LoopField) ; Detect duplicates
-            if (dup==0){
-               indexList .= A_LoopField . "|" ; Build index list for listbox
-               indexArray.Push(A_LoopField)
-            }
-         }
-         HSR_Array[r,c]:=A_LoopField
-      }
-      indexIndex++
-   }
+   GoSub, BuildHSRArray
    Gui, Add, Edit, r1 vUsrIn x160 y10 w220 h30 gInputAlgorithm
    Gui, Add, ListBox, vIndex x10 y10 w140 h330 VScroll Choose1 sort -AltSubmit gLoadLinks, %indexList%
    Gui, Add, ListBox, vLink x160 y40 w280 h300 Choose1 AltSubmit gActivateLinks
@@ -138,11 +118,21 @@ ButtonSubmit:
          } else if (UsrIn ~= "\*.*"){
             GuiControl, focus, Link
          } else if (UsrIn ~= ".*\+.*"){
+            GuiControl, -redraw, Link
             GoSub, AppendLinks
-            GoSub, DestroyGui
+            GoSub, LoadLinks
+            ;GoSub, BuildHSRArray
+            GuiControl, +redraw, Link
+            GuiControl,,UsrIn,
+            ;GoSub, DestroyGui
          } else if (UsrIn ~= "i)Del.*\-.*"){
+            GuiControl, -redraw, Link
             GoSub, RemoveLinks
-            GoSub, DestroyGui
+            GoSub, LoadLinks
+            ;GoSub, BuildHSRArray
+            GuiControl, +redraw, Link
+            GuiControl,,UsrIn,
+            ;GoSub, DestroyGui
          } else {
             searchQuery = %UsrIn%
             GoSub, GoogleSearch
@@ -236,8 +226,14 @@ AppendLinks:
       if (linkTxt[2] != "" && linkTxt[3] != "") {
          appendTxt:="`n""" . linkTxt[1] . """," . """[" . linkTxt[2] . "](" . linkTxt[3] . ")"""
          FileAppend, %appendTxt%, HSR_Master.csv
-         return
+         ;return
+      } else if (linkTxt[2] == "" && linkTxt[3] == ""){
+         appendTxt:="`n""" . linkTxt[1] . """," . """[ ]()"""
+         FileAppend, %appendTxt%, HSR_Master.csv
+         ;return
       }
+      GoSub, DestroyGui
+      return
    } else if linkIndex is integer
    {
       linkArray.InsertAt(linkTxt[2],[linkTxt[3],linkTxt[4]])
@@ -271,22 +267,11 @@ return
 
 RemoveLinks:
    Gui, Submit, noHide
-   removeTxt:=StrSplit(UsrIn,"-",,3)
+   removeTxt:=StrSplit(UsrIn,"-",,2)
    linkString=
-   ;Sample: 1DELETE-2LinkIndex-3LinkIndex
-   if (removeTxt[2] != "") {
-      MsgBox, 4, Continue?, % "Do you want to remove the link " . linkArray[removeTxt[2],1] . "?"
-      IfMsgBox, No
-         Return
-      IfMsgBox, Yes
-      {
-         linkArray.RemoveAt(removeTxt[2])
-         Loop % linkArray.MaxIndex()
-         {
-            linkString .= "[" . linkArray[A_Index,1] . "](" . linkArray[A_Index,2] . ")"
-         }
-      }
-   } else {
+   removeTxtIndex:=removeTxt[2]
+   ;Sample: 1DELETE-2LinkIndex
+   if (removeTxt[2] == "-") {
       MsgBox, 4, Continue?, Do you want to delete all of the data in %index%?
       ifMsgBox, No
          return
@@ -303,7 +288,34 @@ RemoveLinks:
             }
          }
       }
-   }
+      ;GoSub, DestroyGui
+      ;return
+   } else if (removeTxt[2] == "") {
+      MsgBox, 4, Continue?, % "Do you want to remove the link " . linkArray[Link,1] . "?"
+      IfMsgBox, No
+         Return
+      IfMsgBox, Yes
+      {
+         linkArray.RemoveAt(Link)
+         Loop % linkArray.MaxIndex()
+         {
+            linkString .= "[" . linkArray[A_Index,1] . "](" . linkArray[A_Index,2] . ")"
+         }
+      }
+   } else if removeTxtIndex is integer
+   {
+      MsgBox, 4, Continue?, % "Do you want to remove the link " . linkArray[removeTxt[2],1] . "?"
+      IfMsgBox, No
+         Return
+      IfMsgBox, Yes
+      {
+         linkArray.RemoveAt(removeTxt[2])
+         Loop % linkArray.MaxIndex()
+         {
+            linkString .= "[" . linkArray[A_Index,1] . "](" . linkArray[A_Index,2] . ")"
+         }
+      }
+   } ;else 
    ;MsgBox % linkString
    Loop % HSR_Array.MaxIndex()
    {
@@ -317,6 +329,30 @@ RemoveLinks:
    }
 
    GoSub, SaveHSR
+   if (removeTxt[2] == "-")
+      GoSub, DestroyGui
+return
+
+BuildHSRArray:
+   Loop, Parse, HSR_String, `n, `r ; Build HSR_Array
+   {
+      r:=A_Index ; Row number
+      ;MsgBox, % A_LoopField
+      Loop, Parse, A_LoopField, CSV
+      {
+         c:=A_Index ; Column number
+         if (A_Index==1 && r>1) ; Only search first column
+         {
+            dup := InStr(indexList,A_LoopField) ; Detect duplicates
+            if (dup==0){
+               indexList .= A_LoopField . "|" ; Build index list for listbox
+               indexArray.Push(A_LoopField)
+            }
+         }
+         HSR_Array[r,c]:=A_LoopField
+      }
+      indexIndex++
+   }
 return
 
 SaveHSR:
@@ -471,6 +507,14 @@ FavLink9=
 DkMd=1
 Trans=200
    ), HS_Settings.ini
+return
+
+GenerateHSR:
+   FileAppend,
+   (
+"Index Label","[Link1 Label](Link1 URL)[Link2 Label](Link2 URL)..."
+"Quick Start Guide","[NAVIGATION REFERENCE]()[Type * to search the category index on the left]()[Tab between the various windows]()[Press Enter after typing * to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE]()[Add Index Category - 'Category Name+']()[Add link - '+Link Name+Link URL']()[Add at Position - '+Position#+Link Name+LinkURL']()[Remove Selected Link - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete--']()[ ]()[CLICK HERE for the latest updates](https://github.com/JSSatchell/HyperSearch)"
+   ), HSR_Master.csv
 return
 
 Help:
