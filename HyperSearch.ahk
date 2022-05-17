@@ -523,6 +523,7 @@ FavLink9=
 [Theme]
 DkMd=1
 Trans=200
+MinMode=0
    ), HS_Settings.ini
 return
 
