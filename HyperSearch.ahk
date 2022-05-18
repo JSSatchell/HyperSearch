@@ -31,7 +31,7 @@ lastIndex:=1
 { 
    IniRead, min, HS_Settings.ini, Theme, MinMode
    Hotkey, #Space, Off
-   if (min == 1) {
+   if (min == 1) { ; Activate minimal UI
       Gui Menu
       Gosub, LoadMenu
       GoSub, SetTheme
@@ -40,7 +40,7 @@ lastIndex:=1
       Gui -Caption
       Gui, Show, h40 w310, HyperSearch Lite
       Return
-   } else {
+   } else { ; Activate main UI
       Gui Menu
       Gosub, LoadMenu
       GoSub, SetTheme
@@ -87,7 +87,7 @@ lastIndex:=1
 
 GoogleSearch:
 ;;;;;Adapted from this thread: https://www.autohotkey.com/board/topic/13404-google-search-on-highlighted-text/
-   if (searchQuery != ""){
+   if (searchQuery != "" && searchQuery != " "){
       searchQuery := StrReplace(searchQuery, "`n`r", A_Space)
       searchQuery := Trim(searchQuery)
       searchQuery := StrReplace(searchQuery, "\", "`%5C")
@@ -110,14 +110,20 @@ ButtonSubmit:
    GuiControlGet, activeControl, Focus
    ;MsgBox % activeControl
    if (activeControl == "ListBox2") {
-      searchQuery := linkArray[Link,2]
-      ;MsgBox % linkArray[Link]
-      GoSub, GoogleSearch
+      if (linkArray[Link,2] == "*") {
+         linkLabel:=linkArray[Link,1]
+         RegExMatch(linkLabel, "O)<(.*?)>", match)
+         GuiControl, ChooseString, index, % "|" . match[1]
+         return
+      } else {
+         searchQuery := linkArray[Link,2]
+         GoSub, GoogleSearch
+      }
    } if (activeControl == "ListBox1") {
       GuiControl, focus, Link
    } else {
       if (UsrIn != ""){
-         if (UsrIn ~= "\*.*"){
+         if (UsrIn ~= "^\*.*"){
             GuiControl, focus, Link
          } else if (RegExMatch(UsrIn, "^[1-9]>.*")){
             GoSub, EditFav
@@ -128,8 +134,6 @@ ButtonSubmit:
          } else if (UsrIn ~= "i)^set>.*"){
             GoSub, EditSettings
             GoSub, DestroyGui
-         } else if (UsrIn ~= "\*.*"){
-            GuiControl, focus, Link
          } else if (UsrIn ~= ".*\+.*"){
             GuiControl, -redraw, Link
             GoSub, AppendLinks
@@ -219,10 +223,14 @@ return
 ActivateLinks:
    Gui, Submit, noHide
    if (A_GuiEvent == "DoubleClick") {
-      ;MsgBox % linkArray[Link,1]
-      searchQuery := linkArray[Link,2]
-      ;MsgBox % linkArray[Link]
-      GoSub, GoogleSearch
+      if (linkArray[Link,2] == "*") {
+         linkLabel:=linkArray[Link,1]
+         RegExMatch(linkLabel, "O)<(.*?)>", match)
+         GuiControl, ChooseString, index, % "|" . match[1]
+      } else {
+         searchQuery := linkArray[Link,2]
+         GoSub, GoogleSearch
+      }
    }
 return
 
