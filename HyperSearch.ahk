@@ -1,4 +1,4 @@
-Menu, Tray, Icon, shell32.dll, 15 ; Icon
+Menu, Tray, Icon, shell32.dll, 210 ; Icon
 
 #NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
 ; #Warn  ; Enable warnings to assist with detecting common errors.
@@ -53,7 +53,7 @@ lastIndex:=1
       GoSub, BuildHSRArray
       Gui, Add, Edit, r1 vUsrIn x160 y10 w220 h30 gInputAlgorithm
       Gui, Add, ListBox, vIndex x10 y10 w140 h330 VScroll Choose1 sort -AltSubmit gLoadLinks, %indexList%
-      Gui, Add, ListBox, vLink x160 y40 w280 h300 Choose1 AltSubmit gActivateLinks
+      Gui, Add, ListBox, vLink x160 y49 w280 h300 Choose1 AltSubmit gActivateLinks
       Gui, Add, Button, Default x390 y10 w50 h20 , Submit
       ; Generated UsrIng SmartGUI Creator 4.0
       Gui -Caption
@@ -113,6 +113,8 @@ ButtonSubmit:
       searchQuery := linkArray[Link,2]
       ;MsgBox % linkArray[Link]
       GoSub, GoogleSearch
+   } if (activeControl == "ListBox1") {
+      GuiControl, focus, Link
    } else {
       if (UsrIn != ""){
          if (UsrIn ~= "\*.*"){
@@ -149,11 +151,11 @@ ButtonSubmit:
             GoSub, GoogleSearch
             GoSub, DestroyGui
          } 
+      } else {
+         searchQuery := linkArray[Link,2]
+         GoSub, GoogleSearch
       }
    }
-   ;MsgBox, %UsrIn%
-
-   ;GoSub, DestroyGui
 Return
 
 InputAlgorithm:
@@ -161,7 +163,7 @@ InputAlgorithm:
    ;GuiControl, ChooseString, IndexList, |%UsrIn%
    if(RegExMatch(UsrIn, "^\*.*"))
    {
-      GuiControl, ChooseString, index, % "|" . LTrim(UsrIn, "*")
+      GuiControl, ChooseString, index, % "|" . SubStr(UsrIn,2)
    }
 return
 
@@ -214,7 +216,6 @@ LoadLinks:
    GuiControl, Choose, Link, 1
 return
 
-
 ActivateLinks:
    Gui, Submit, noHide
    if (A_GuiEvent == "DoubleClick") {
@@ -228,46 +229,71 @@ return
 AppendLinks:
    Gui, Submit, noHide
    linkString=
-   ; Sample: 1IndexLabel+2LinkName+3URL
-   ; Sample: 1Buffer+2LinkIndex+3LinkName+4URL
+   ; Sample: 1Category+2LinkIndex+3LinkName+4URL
    linkTxt:=StrSplit(UsrIn,"+",,4)
    linkIndex:=linkTxt[2]
    ;MsgBox % indexLabel . "`n" . linkIndex . "`n" . linkName . "`n" . linkURL
-   if (linkTxt[1] != "") {
-      if (linkTxt[2] != "" && linkTxt[3] != "") {
+   if (linkTxt[1] != "") { ; Add new category
+      ;MsgBox % SubStr(UsrIn,-1)
+      if (linkTxt[2] != "" && linkTxt[3] != "") { ; Add first link
          appendTxt:="`n""" . linkTxt[1] . """," . """[" . linkTxt[2] . "](" . linkTxt[3] . ")"""
          FileAppend, %appendTxt%, HSR_Master.csv
          ;return
-      } else if (linkTxt[2] == "" && linkTxt[3] == ""){
+      } else if (SubStr(UsrIn,-1) == "++") { ; Rename current category
+         Loop % HSR_Array.MaxIndex()
+         {
+            match := InStr(index,HSR_Array[A_Index,1])
+            if (match!=0) {
+               HSR_Array[A_Index,1]:=linkTxt[1] ; Add cell text to array
+               MsgBox % "Category " . index . " has been renamed to " . linkTxt[1] . "."
+               GoSub, SaveHSR
+               break
+            }
+         }
+      } else { ; Add category with blank first entry
          appendTxt:="`n""" . linkTxt[1] . """," . """[ ]()"""
          FileAppend, %appendTxt%, HSR_Master.csv
          ;return
       }
       GoSub, DestroyGui
       return
-   } else if linkIndex is integer
+   } else if (linkIndex == "v") {
+      linkArray.push([linkTxt[3],linkTxt[4]]) ; Add link in last position
+   } else if linkIndex is integer ; Position specific Link
    {
-      linkArray.InsertAt(linkTxt[2],[linkTxt[3],linkTxt[4]])
-      Loop % linkArray.MaxIndex()
-      {
-         linkString .= "[" . linkArray[A_Index,1] . "](" . linkArray[A_Index,2] . ")"
+      if (linkTxt[3] != "" && linkTxt[4] != "") {
+         linkArray.InsertAt(linkTxt[2],[linkTxt[3],linkTxt[4]]) ; Insert at position
+      } else if (linkTxt[3] == "") {
+         linkArray[linkTxt[2],2]:=linkTxt[4] ; Update URL at position
+         MsgBox % linkArray[linkTxt[2],1] . " now links to " . linkArray[linkTxt[2],2]
+      } else if (linkTxt[4] == "" && SubStr(UsrIn,0) == "+") {
+         oldLabel:=linkArray[linkTxt[2],1]
+         linkArray[linkTxt[2],1]:=linkTxt[3] ; Update label at position
+         MsgBox % oldLabel . " is now labelled " . linkArray[linkTxt[2],1]
       }
-   } else {
-      ;linkString=
-      linkArray.InsertAt(1,[linkTxt[2],linkTxt[3]])
-      Loop % linkArray.MaxIndex()
-      {
-         linkString .= "[" . linkArray[A_Index,1] . "](" . linkArray[A_Index,2] . ")"
+   } else { ; Unspecified position number
+      if (linkTxt[2] != "" && linkTxt[3] != "") {
+         linkArray.InsertAt(1,[linkTxt[2],linkTxt[3]]) ; Insert in first position
+      } else if (linkTxt[2] == "") {
+         linkArray[Link,2]:=linkTxt[3] ; Update URL of current
+         MsgBox % linkArray[Link,1] . " now links to " . linkArray[Link,2]
+      } else if (linkTxt[3] == "" && SubStr(UsrIn,0) == "+") {
+         oldLabel:=linkArray[Link,1]
+         linkArray[Link,1]:=linkTxt[2] ; Update label of current
+         MsgBox % oldLabel . " is now labelled " . linkArray[Link,1]
       }
    }
-   ;MsgBox % linkString
+   
+   Loop % linkArray.MaxIndex() ; Build cell text
+   {
+      linkString .= "[" . linkArray[A_Index,1] . "](" . linkArray[A_Index,2] . ")"
+   }
+
    Loop % HSR_Array.MaxIndex()
    {
       match := InStr(index,HSR_Array[A_Index,1])
-      ;MsgBox % HSR_Array[xPos,2] . "`n" . index
       if (match!=0) {
-         HSR_Array[A_Index,2]:=linkString
-         ;MsgBox % linkString
+         HSR_Array[A_Index,2]:=linkString ; Add cell text to array
          break
       }
    }
@@ -531,7 +557,7 @@ GenerateHSR:
    FileAppend,
    (
 "Index Label","[Link1 Label](Link1 URL)[Link2 Label](Link2 URL)..."
-"Quick Start Guide","[NAVIGATION REFERENCE]()[Type * to search the category index on the left]()[Tab between the various windows]()[Press Enter after typing * to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE]()[Add Index Category - 'Category Name+']()[Add link - '+Link Name+Link URL']()[Add at Position - '+Position#+Link Name+LinkURL']()[Remove Selected Link - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete--']()[ ]()[CLICK HERE for the latest updates](https://github.com/JSSatchell/HyperSearch)"
+"Quick Start Guide","[NAVIGATION REFERENCE]()[Type * to search the category index on the left]()[Tab between control windows]()[Press Enter after typing * to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE]()[Edit Favorites - 'Favorite#>Label>URL']()[Add Index Category - 'Category Name+']()[Add link - '+Link Name+Link URL']()[Add at Position - '+Position#+Link Name+LinkURL']()[Remove Selected Link - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete--']()[ ]()[SETTINGS]()[Min/Max Mode - 'Set>Min/Max']()[Dark/Light Mode - 'Set>Dark/Light']()[Transparency - 'Set>Transparency>Percentage']()[]()[CLICK HERE for the latest updates](https://github.com/JSSatchell/HyperSearch)"
    ), HSR_Master.csv
 return
 
