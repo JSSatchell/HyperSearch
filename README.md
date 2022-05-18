@@ -61,6 +61,10 @@ To add a link at a specific position, type "+" followed by the position number f
 
     +1+Calendar+calendar.google.com
     
+To add a link at the bottom of the links list, substitute "v" for the position value
+
+    +v+GDrive+drive.google.com
+    
 To remove the current link, type "Delete-" and select "Yes" on the prompt
 
     Delete-
