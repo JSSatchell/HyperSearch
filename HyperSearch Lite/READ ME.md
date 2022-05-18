@@ -1,4 +1,8 @@
-**Preview:**
+### NOTE: HyperSearch Lite is now fully integrated into HyperSearch via "Min Mode"
+
+---
+
+**PREVIEW:**
 
 ![image](https://user-images.githubusercontent.com/99512204/166970969-f181093f-1e91-4174-80d2-007b428868f4.png)
 
@@ -14,7 +18,7 @@ When the app is launched for the first time it will create a .ini sidecar file. 
 
 ---
 
-**UPDATE FAVORITES:**
+**UPDATE FAVORITES**
 
 To update favorites type a number 1-9 and then ">" followed by your desired label name then ">" followed by the link URL. For example:
  
