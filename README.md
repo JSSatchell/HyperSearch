@@ -47,7 +47,7 @@ If focus is on the search bar, Tab will first go to the index which can be navig
 
 ---
 
-**EDITING LINKS**
+**ADDING AND REMOVING CATEGORIES & LINKS**
 
 To add a category, type the category name and "+"
 
@@ -72,6 +72,30 @@ To remove a link at a specific position, type "Delete-" followed by the position
 To remove the current category, type "Delete--" and select "Yes" on the prompt
 
     Delete--
+
+---
+
+**EDITING CATEGORY NAMES, LINK LABELS, AND URLs**
+
+To rename the current category, type the new category name followed by "++"
+
+    New Category Name++
+    
+To relabel the current link, type "+" followed by the new label followed by "+"
+
+    +New Link Label+
+    
+To relabel a link at a specific position, precede the command with "+" and the desired position #
+
+    +2+New Link Label+
+    
+To reassign the URL of the current link, type "++" followed by the new URL
+
+    ++New URL
+    
+To reassign a URL of a link at a specific position, precede the command with "+" and the desired position #
+
+    +2++New URL
 
 ---
 
