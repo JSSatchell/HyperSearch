@@ -59,7 +59,7 @@ To add a link to the current category, type "+" followed the name of the link fo
     
 To add a link at a specific position, type "+" followed by the position number followed by "+" followed by the link name followed by "+" followed by the URL
 
-    +2+Calendar+calendar.google.com
+    +1+Calendar+calendar.google.com
     
 To remove the current link, type "Delete-" and select "Yes" on the prompt
 
@@ -67,7 +67,7 @@ To remove the current link, type "Delete-" and select "Yes" on the prompt
     
 To remove a link at a specific position, type "Delete-" followed by the position number and select "Yes" on the prompt
 
-    Delete-2
+    Delete-1
 
 To remove the current category, type "Delete--" and select "Yes" on the prompt
 
@@ -87,7 +87,7 @@ To relabel the current link, type "+" followed by the new label followed by "+"
     
 To relabel a link at a specific position, precede the command with "+" and the desired position #
 
-    +2+New Link Label+
+    +1+New Link Label+
     
 To reassign the URL of the current link, type "++" followed by the new URL
 
@@ -95,7 +95,15 @@ To reassign the URL of the current link, type "++" followed by the new URL
     
 To reassign a URL of a link at a specific position, precede the command with "+" and the desired position #
 
-    +2++New URL
+    +1++New URL
+
+---
+
+**CROSSLINKING**
+
+To have a link activate a specific category in the index, encapsulate the exact text of the desired category with "<>" and set the link URL to "*"
+
+    +1+<Category Label>+*
 
 ---
 
