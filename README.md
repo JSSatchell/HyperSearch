@@ -1,6 +1,8 @@
 # HyperSearch
 Instant internet search, minus the distractions.
 
+In editor language: It's FX Console/Excalibur for the internet.
+
 **PREVIEW**
 
 ![image](https://user-images.githubusercontent.com/99512204/168928729-1a696160-30fa-4657-a4bf-3b37fe9a349f.png)
