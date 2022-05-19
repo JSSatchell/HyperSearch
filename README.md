@@ -87,11 +87,11 @@ To rename the current category, type the new category name followed by "++"
     
 To relabel the current link, type "+" followed by the new label followed by "+"
 
-    +New Link Label+
+    +New Link Label
     
 To relabel a link at a specific position, precede the command with "+" and the desired position #
 
-    +1+New Link Label+
+    +1+New Link Label
     
 To reassign the URL of the current link, type "++" followed by the new URL
 
@@ -141,7 +141,13 @@ To update the search engine, type "Search>" and then either "Google", "Bing", or
 
 **UPDATE THE SETTINGS**
 
-Beginthe search with "Set>"
+Begin the search with "Set>"
+
+To edit the hotkeys, type "Hotkey1/2>" followed by your desired hotkey
+
+For reference: "Hotkey1" opens the GUI, "Hotkey2" searches for highlighted text
+
+    Set>Hotkey1>ctrl+space
 
 To set the interface to the more streamlined one of HyperSearch Lite, type "Min"
 
