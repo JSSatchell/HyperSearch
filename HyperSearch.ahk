@@ -52,6 +52,7 @@ LoadGUI:
       Gui, Add, Edit, r1 vUsrIn x10 y10 w230 h30
       Gui, Add, Button, Default x250 y10 w50 h20 , Submit
       Gui -Caption
+      Gui +ToolWindow
       Gui, Show, h40 w310, HyperSearch Lite
       Return
    } else { ; Activate main UI
@@ -165,7 +166,6 @@ ButtonSubmit:
          } else {
             searchQuery = %UsrIn%
             GoSub, GoogleSearch
-            GoSub, DestroyGui
          } 
       } else {
          searchQuery := linkArray[Link,2]
@@ -534,7 +534,7 @@ EditSettings:
       MsgBox, Max mode applied.
    } else if (search[2] ~= "i)h.*k.*1") {
       failsafe:=GUIHotkey
-      checkParts:=StrSplit(search[3],"+")
+      usrHotkey:=search[3]
       search[3] := StrReplace(search[3], "win", "#")
       search[3] := StrReplace(search[3], "ctrl", "^")
       search[3] := StrReplace(search[3], "alt", "!")
@@ -554,9 +554,10 @@ EditSettings:
          Hotkey, %GUIHotkey%, searchHighlight
       }
       Hotkey, %GUIHotkey%, on
+      MsgBox % "Hotkey 1 has been set to " . usrHotkey
    } else if (search[2] ~= "i)h.*k.*2") {
       failsafe:=hiHotkey
-      checkParts:=StrSplit(search[3],"+")
+      usrHotkey:=search[3]
       search[3] := StrReplace(search[3], "win", "#")
       search[3] := StrReplace(search[3], "ctrl", "^")
       search[3] := StrReplace(search[3], "alt", "!")
@@ -576,6 +577,7 @@ EditSettings:
          Hotkey, %hiHotkey%, searchHighlight
       }
       Hotkey, %hiHotkey%, on
+      MsgBox % "Hotkey 2 has been set to " . usrHotkey
    } else if (search[2] ~= "i)trans.*") {
       transVal := search[3]
       if transVal is integer
