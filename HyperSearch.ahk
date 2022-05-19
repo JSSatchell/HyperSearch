@@ -5,6 +5,8 @@ Menu, Tray, Icon, shell32.dll, 210 ; Icon
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #SingleInstance force
+#InstallMouseHook
+#InstallKeybdHook
 
 ;;;;;USE DEFAULT BROWSER;;;;;
 RegRead, ProgID, HKEY_CURRENT_USER, Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice, Progid
@@ -16,8 +18,12 @@ if (ProgID = "FirefoxURL")
 
 If !FileExist("HS_Settings.ini") {
    Gosub, GenerateSettings
-}
+} else
+   GoSub, CheckSettings
+
 IniRead, searchEngine, HS_Settings.ini, Search Engine, Default
+IniRead, GUIHotkey, HS_Settings.ini, Settings, GUIHotkey
+IniRead, hiHotkey, HS_Settings.ini, Settings, HighlightHotkey
 
 If !FileExist("HSR_Master.csv") {
    GoSub, GenerateHSR
@@ -26,13 +32,21 @@ If !FileExist("HSR_Master.csv") {
 
 lastIndex:=1
 
+Hotkey, %GUIHotkey%, LoadGUI
+Hotkey, %hiHotkey%, searchHighlight
+return
+
 ;;;;;ENTER SEARCH TERMS;;;;;
-#Space:: 
+;#Space:: 
+LoadGUI:
 { 
-   IniRead, min, HS_Settings.ini, Theme, MinMode
-   Hotkey, #Space, Off
+   IniRead, min, HS_Settings.ini, Settings, MinMode
+   ;Hotkey, #Space, FocusHS
+   Hotkey, %GUIHotkey%, FocusHS
+   ;Hotkey, RButton, on
+   ;Hotkey, RButton, RightClickMenu
+   ;Hotkey, LButton, ClickOff
    if (min == 1) { ; Activate minimal UI
-      Gui Menu
       Gosub, LoadMenu
       GoSub, SetTheme
       Gui, Add, Edit, r1 vUsrIn x10 y10 w230 h30
@@ -41,24 +55,7 @@ lastIndex:=1
       Gui, Show, h40 w310, HyperSearch Lite
       Return
    } else { ; Activate main UI
-      Gui Menu
-      Gosub, LoadMenu
-      GoSub, SetTheme
-      HSR_Array:=[]
-      indexList=
-      indexArray:=[]
-      FileRead, HSR_String, HSR_Master.csv
-      ;indexIndex:=0
-      ;MsgBox, %HSR_String%
-      GoSub, BuildHSRArray
-      Gui, Add, Edit, r1 vUsrIn x160 y10 w220 h30 gInputAlgorithm
-      Gui, Add, ListBox, vIndex x10 y10 w140 h330 VScroll Choose1 sort -AltSubmit gLoadLinks, %indexList%
-      Gui, Add, ListBox, vLink x160 y49 w280 h300 Choose1 AltSubmit gActivateLinks
-      Gui, Add, Button, Default x390 y10 w50 h20 , Submit
-      ; Generated UsrIng SmartGUI Creator 4.0
-      Gui -Caption
-      Gui, Show, h350 w450, HyperSearch
-      Control, Choose, %lastIndex%, Listbox1
+      GoSub, BuildMainGUI
       Return
    }
    GuiClose:
@@ -68,7 +65,8 @@ lastIndex:=1
 }
 
 ;;;;;SEARCH FOR HIGHLIGHTED TEXT;;;;;
-^#Space:: 
+;^#Space:: 
+searchHighlight:
 { 
    BlockInput, on 
    prevClipboard = %clipboard% 
@@ -84,6 +82,24 @@ lastIndex:=1
    clipboard = %prevClipboard% 
    return 
 }
+
+/*
+RButton::
+{
+   MouseGetPos,,,,cont
+   ;MsgBox % cont
+   if (cont=="ListBox2"){
+      Click,
+      Menu, RCLB2, Add, Add above, DestroyGui
+      Menu, RCLB2, Add, Add below, DestroyGui
+      Menu, RCLB2, Add, Rename, DestroyGui
+      Menu, RCLB2, Add, Reassign link, DestroyGui
+      Menu, RCLB2, Add, Delete, DestroyGui
+      Menu, RCLB2, Show
+   }
+   return
+}
+*/
 
 GoogleSearch:
 ;;;;;Adapted from this thread: https://www.autohotkey.com/board/topic/13404-google-search-on-highlighted-text/
@@ -138,18 +154,14 @@ ButtonSubmit:
             GuiControl, -redraw, Link
             GoSub, AppendLinks
             GoSub, LoadLinks
-            ;GoSub, BuildHSRArray
             GuiControl, +redraw, Link
             GuiControl,,UsrIn,
-            ;GoSub, DestroyGui
-         } else if (UsrIn ~= "i)Del.*\-.*"){
+         } else if (UsrIn ~= "i)del.*\-.*"){
             GuiControl, -redraw, Link
             GoSub, RemoveLinks
             GoSub, LoadLinks
-            ;GoSub, BuildHSRArray
             GuiControl, +redraw, Link
             GuiControl,,UsrIn,
-            ;GoSub, DestroyGui
          } else {
             searchQuery = %UsrIn%
             GoSub, GoogleSearch
@@ -172,7 +184,7 @@ InputAlgorithm:
 return
 
 LoadMenu:
-   Gui Menu
+   ;Gui Menu
    i:=1
    while(i<=9){
       IniRead, currentFav, HS_Settings.ini, Favorite Labels, Favorite%i%
@@ -264,6 +276,7 @@ AppendLinks:
          ;return
       }
       GoSub, DestroyGui
+      GoSub, BuildMainGUI
       return
    } else if (linkIndex == "v") {
       linkArray.push([linkTxt[3],linkTxt[4]]) ; Add link in last position
@@ -274,7 +287,8 @@ AppendLinks:
       } else if (linkTxt[3] == "") {
          linkArray[linkTxt[2],2]:=linkTxt[4] ; Update URL at position
          MsgBox % linkArray[linkTxt[2],1] . " now links to " . linkArray[linkTxt[2],2]
-      } else if (linkTxt[4] == "" && SubStr(UsrIn,0) == "+") {
+      ;} else if (linkTxt[4] == "" && SubStr(UsrIn,0) == "+") {
+      } else if (linkTxt[4] == "") {
          oldLabel:=linkArray[linkTxt[2],1]
          linkArray[linkTxt[2],1]:=linkTxt[3] ; Update label at position
          MsgBox % oldLabel . " is now labelled " . linkArray[linkTxt[2],1]
@@ -285,7 +299,8 @@ AppendLinks:
       } else if (linkTxt[2] == "") {
          linkArray[Link,2]:=linkTxt[3] ; Update URL of current
          MsgBox % linkArray[Link,1] . " now links to " . linkArray[Link,2]
-      } else if (linkTxt[3] == "" && SubStr(UsrIn,0) == "+") {
+      ;} else if (linkTxt[3] == "" && SubStr(UsrIn,0) == "+") {
+      } else if (linkTxt[3] == "") {
          oldLabel:=linkArray[Link,1]
          linkArray[Link,1]:=linkTxt[2] ; Update label of current
          MsgBox % oldLabel . " is now labelled " . linkArray[Link,1]
@@ -317,7 +332,7 @@ RemoveLinks:
    removeTxtIndex:=removeTxt[2]
    ;Sample: 1DELETE-2LinkIndex
    if (removeTxt[2] == "-") {
-      MsgBox, 4, Continue?, Do you want to delete all of the data in %index%?
+      MsgBox, 260, Continue?, Do you want to delete all of the data in %index%?
       ifMsgBox, No
          return
       IfMSgBox, Yes
@@ -374,8 +389,32 @@ RemoveLinks:
    }
 
    GoSub, SaveHSR
-   if (removeTxt[2] == "-")
+   if (removeTxt[2] == "-"){
       GoSub, DestroyGui
+      GoSub, BuildMainGUI
+   }
+return
+
+BuildMainGUI:
+   Gosub, LoadMenu
+   GoSub, SetTheme
+   HSR_Array:=[]
+   indexList=
+   indexArray:=[]
+   FileRead, HSR_String, HSR_Master.csv
+   ;indexIndex:=0
+   ;MsgBox, %HSR_String%
+   GoSub, BuildHSRArray
+   Gui, Add, Edit, r1 vUsrIn x160 y10 w220 h30 gInputAlgorithm
+   Gui, Add, ListBox, vIndex x10 y10 w140 h330 0x100 VScroll Choose%lastIndex% sort -AltSubmit gLoadLinks, %indexList%
+   Gui, Add, ListBox, vLink x160 y45 w280 h295 0x100 Choose1 AltSubmit gActivateLinks
+   Gui, Add, Button, Default x390 y10 w50 h20 -Tabstop, Submit
+   ; Generated UsrIng SmartGUI Creator 4.0
+   ;Gui -Caption
+   Gui +ToolWindow
+   Gui -SysMenu
+   Gui, Show, h350 w450, HyperSearch
+   Control, Choose, %lastIndex%, Listbox1
 return
 
 BuildHSRArray:
@@ -482,23 +521,67 @@ return
 EditSettings:
    search:=StrSplit(UsrIn,">",,3)
    if (search[2] ~= "i)d.rk") {
-      IniWrite, 1, HS_Settings.ini, Theme, DkMd
+      IniWrite, 1, HS_Settings.ini, Settings, DkMd
       MsgBox, Dark theme applied.
    } else if (search[2] ~= "i)light") {
-      IniWrite, 0, HS_Settings.ini, Theme, DkMd
+      IniWrite, 0, HS_Settings.ini, Settings, DkMd
       MsgBox, Light theme applied.
    } else if (search[2] ~= "i)min") {
-      IniWrite, 1, HS_Settings.ini, Theme, MinMode
+      IniWrite, 1, HS_Settings.ini, Settings, MinMode
       MsgBox, Min mode applied.
    } else if (search[2] ~= "i)max") {
-      IniWrite, 0, HS_Settings.ini, Theme, MinMode
+      IniWrite, 0, HS_Settings.ini, Settings, MinMode
       MsgBox, Max mode applied.
+   } else if (search[2] ~= "i)h.*k.*1") {
+      failsafe:=GUIHotkey
+      checkParts:=StrSplit(search[3],"+")
+      search[3] := StrReplace(search[3], "win", "#")
+      search[3] := StrReplace(search[3], "ctrl", "^")
+      search[3] := StrReplace(search[3], "alt", "!")
+      search[3] := StrReplace(search[3], "+", "")
+      search[3] := StrReplace(search[3], "=", "+")
+      search[3] := StrReplace(search[3], "shift", "+")
+      newHotkey1:=search[3]
+      IniWrite, %newHotkey1%, HS_Settings.ini, Settings, GUIHotkey
+      ;IniRead, GUIHotkey, HS_Settings.ini, Settings, GUIHotkey
+      Hotkey, %GUIHotkey%, off
+      GUIHotkey:=newHotkey1
+      Hotkey, %GUIHotkey%, LoadGUI, UseErrorLevel
+      if (ErrorLevel) {
+         MsgBox, Invalid Hotkey
+         IniWrite, %failsafe%, HS_Settings.ini, Settings, GUIHotkey
+         GUIHotkey:=failsafe
+         Hotkey, %GUIHotkey%, searchHighlight
+      }
+      Hotkey, %GUIHotkey%, on
+   } else if (search[2] ~= "i)h.*k.*2") {
+      failsafe:=hiHotkey
+      checkParts:=StrSplit(search[3],"+")
+      search[3] := StrReplace(search[3], "win", "#")
+      search[3] := StrReplace(search[3], "ctrl", "^")
+      search[3] := StrReplace(search[3], "alt", "!")
+      search[3] := StrReplace(search[3], "+", "")
+      search[3] := StrReplace(search[3], "=", "+")
+      search[3] := StrReplace(search[3], "shift", "+")
+      newHotkey2:=search[3]
+      IniWrite, %newHotkey2%, HS_Settings.ini, Settings, HighlightHotkey
+      ;IniRead, hiHotkey, HS_Settings.ini, Settings, HighlightHotkey
+      Hotkey, %hiHotkey%, off
+      hiHotkey:=newHotkey2
+      Hotkey, %hiHotkey%, searchHighlight, UseErrorLevel
+      if (ErrorLevel) {
+         MsgBox, Invalid Hotkey
+         IniWrite, %failsafe%, HS_Settings.ini, Settings, HighlightHotkey
+         hiHotkey:=failsafe
+         Hotkey, %hiHotkey%, searchHighlight
+      }
+      Hotkey, %hiHotkey%, on
    } else if (search[2] ~= "i)trans.*") {
       transVal := search[3]
       if transVal is integer
       {
          transPercent := Round((transVal / 100) * 255)
-         IniWrite, %transPercent%, HS_Settings.ini, Theme, Trans
+         IniWrite, %transPercent%, HS_Settings.ini, Settings, Trans
          MsgBox, % "Transparency is set to " . transVal . "%"
       } else
          MsgBox, Value should be a number between 1-255.
@@ -506,8 +589,8 @@ EditSettings:
 return
 
 SetTheme:
-   IniRead, themeSel, HS_Settings.ini, Theme, DkMd
-   IniRead, transSel, HS_Settings.ini, Theme, Trans
+   IniRead, themeSel, HS_Settings.ini, Settings, DkMd
+   IniRead, transSel, HS_Settings.ini, Settings, Trans
    if (themeSel = 1) {
       Gui, Font, cWhite
       Gui, Color, 404040, 1A1A1A
@@ -521,6 +604,27 @@ SetTheme:
       Gui +LastFound
    }
    WinSet, Transparent, %transSel%
+return
+
+CheckSettings:
+   IniRead, sections, HS_Settings.ini
+   sectionsArray:=StrSplit(sections,"`n")
+   lastSection:=sectionsArray[sectionsArray.maxIndex()]
+   if (lastSection == "Theme") {
+      IniRead, themeContent, HS_Settings.ini, Theme
+      themeContent := "[Settings]`n" . themeContent
+      IniDelete, HS_Settings.ini, Theme
+      FileAppend, %themeContent%, HS_Settings.ini
+   }
+   IniRead, settingsContent, HS_Settings.ini, Settings
+   settingsArray:=StrSplit(settingsContent,"`n")
+   lastSetting:=settingsArray[settingsArray.maxIndex()]
+   lastSettingArray:=StrSplit(lastSetting,"=")
+   ;MsgBox % lastSettingArray[1]
+   newSettings:="`nGUIHotkey=#Space`nHighlightHotkey=^#Space"
+   if (lastSettingArray[1]=="MinMode") {
+      FileAppend, %newSettings%, HS_Settings.ini
+   }
 return
 
 GenerateSettings:
@@ -554,10 +658,12 @@ FavLink7=
 FavLink8=
 FavLink9=
 
-[Theme]
+[Settings]
 DkMd=1
-Trans=200
+Trans=230
 MinMode=0
+GUIHotkey=#Space
+HighlightHotkey=^#Space
    ), HS_Settings.ini
 return
 
@@ -565,7 +671,7 @@ GenerateHSR:
    FileAppend,
    (
 "Index Label","[Link1 Label](Link1 URL)[Link2 Label](Link2 URL)..."
-"Quick Start Guide","[NAVIGATION REFERENCE]()[Type * to search the category index on the left]()[Tab between control windows]()[Press Enter after typing * to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE]()[Edit Favorites - 'Favorite#>Label>URL']()[Add Index Category - 'Category Name+']()[Add link - '+Link Name+Link URL']()[Add at Position - '+Position#+Link Name+LinkURL']()[Remove Selected Link - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete--']()[ ]()[SETTINGS]()[Min/Max Mode - 'Set>Min/Max']()[Dark/Light Mode - 'Set>Dark/Light']()[Transparency - 'Set>Transparency>Percentage']()[]()[CLICK HERE for the latest updates](https://github.com/JSSatchell/HyperSearch)"
+"Quick Start Guide","[NAVIGATION REFERENCE]()[Type * to search the category index on the left]()[Tab between control windows]()[Press Enter after typing * to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE]()[Edit Favorites - 'Favorite#>Label>URL']()[Add Index Category - 'Category Name+']()[Add link - '+Link Name+Link URL']()[Add at Position - '+Position#+Link Name+LinkURL']()[Remove Selected Link - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete--']()[ ]()[SETTINGS]()[Min/Max Mode - 'Set>Min/Max']()[Dark/Light Mode - 'Set>Dark/Light']()[Transparency - 'Set>Transparency>Percentage']()[]()[CLICK HERE for full feature list & updates](https://github.com/JSSatchell/HyperSearch)"
    ), HSR_Master.csv
 return
 
@@ -574,8 +680,13 @@ Help:
    GoSub, DestroyGui
 return
 
+FocusHS:
+   WinActivate, HyperSearch
+return
+
 DestroyGui:
-   Hotkey, #Space, On
+   Hotkey, %GUIHotkey%, LoadGUI
+   ;Hotkey, RButton, off
    GuiControl,+AltSubmit,Index
    GuiControlGet,lastIndex,,Index
    HSR_String=
