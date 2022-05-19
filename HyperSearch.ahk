@@ -1,12 +1,13 @@
-Menu, Tray, Icon, shell32.dll, 210 ; Icon
+Menu, Tray, Icon, shell32.dll, 210 ; Magnifying glass icon
 
 #NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
 ; #Warn  ; Enable warnings to assist with detecting common errors.
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #SingleInstance force
-#InstallMouseHook
-#InstallKeybdHook
+CoordMode, Mouse
+;#InstallMouseHook
+;#InstallKeybdHook
 
 ;;;;;USE DEFAULT BROWSER;;;;;
 RegRead, ProgID, HKEY_CURRENT_USER, Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice, Progid
@@ -16,9 +17,9 @@ if (ProgID = "ChromeHTML")
 if (ProgID = "FirefoxURL")
    Browser := "firefox.exe"
 
-If !FileExist("HS_Settings.ini") {
+If !FileExist("HS_Settings.ini")
    Gosub, GenerateSettings
-} else
+else
    GoSub, CheckSettings
 
 IniRead, searchEngine, HS_Settings.ini, Search Engine, Default
@@ -28,7 +29,6 @@ IniRead, hiHotkey, HS_Settings.ini, Settings, HighlightHotkey
 If !FileExist("HSR_Master.csv") {
    GoSub, GenerateHSR
 }
-;FileRead, HSR_String, HSR_Master.csv
 
 lastIndex:=1
 
@@ -36,24 +36,15 @@ Hotkey, %GUIHotkey%, LoadGUI
 Hotkey, %hiHotkey%, searchHighlight
 return
 
-;;;;;ENTER SEARCH TERMS;;;;;
-;#Space:: 
 LoadGUI:
 { 
+   GoSub, DestroyGUI
    IniRead, min, HS_Settings.ini, Settings, MinMode
-   ;Hotkey, #Space, FocusHS
-   Hotkey, %GUIHotkey%, FocusHS
+   ;Hotkey, %GUIHotkey%, DestroyGUI
    ;Hotkey, RButton, on
    ;Hotkey, RButton, RightClickMenu
-   ;Hotkey, LButton, ClickOff
    if (min == 1) { ; Activate minimal UI
-      Gosub, LoadMenu
-      GoSub, SetTheme
-      Gui, Add, Edit, r1 vUsrIn x10 y10 w230 h30
-      Gui, Add, Button, Default x250 y10 w50 h20 , Submit
-      Gui -Caption
-      Gui +ToolWindow
-      Gui, Show, h40 w310, HyperSearch Lite
+      GoSub, BuildLiteGUI
       Return
    } else { ; Activate main UI
       GoSub, BuildMainGUI
@@ -65,8 +56,6 @@ LoadGUI:
    Return
 }
 
-;;;;;SEARCH FOR HIGHLIGHTED TEXT;;;;;
-;^#Space:: 
 searchHighlight:
 { 
    BlockInput, on 
@@ -145,12 +134,11 @@ ButtonSubmit:
          } else if (RegExMatch(UsrIn, "^[1-9]>.*")){
             GoSub, EditFav
             GoSub, DestroyGui
-         } else if (UsrIn ~= "i)^search>.*"){
-            GoSub, EditSearch
-            GoSub, DestroyGui
+            GoSub, LoadGUI
          } else if (UsrIn ~= "i)^set>.*"){
             GoSub, EditSettings
             GoSub, DestroyGui
+            GoSub, LoadGUI
          } else if (UsrIn ~= ".*\+.*"){
             GuiControl, -redraw, Link
             GoSub, AppendLinks
@@ -206,10 +194,11 @@ LoadLinks:
    linkArray := []
    Loop % HSR_Array.MaxIndex()
    {
-      match := InStr(index,HSR_Array[A_Index,1])
-      ;MsgBox % HSR_Array[xPos,2] . "`n" . index
-      if (match!=0) {
+      ;match := InStr(index,HSR_Array[A_Index,1])
+      ;MsgBox % HSR_Array[A_Index,1] . "`n" . index
+      if (index==HSR_Array[A_Index,1]) {
          linkCell .= HSR_Array[A_Index,2]
+         ;MsgBox % HSR_Array[A_Index,1] . "`n" . index
          break
       }
    }
@@ -262,8 +251,8 @@ AppendLinks:
       } else if (SubStr(UsrIn,-1) == "++") { ; Rename current category
          Loop % HSR_Array.MaxIndex()
          {
-            match := InStr(index,HSR_Array[A_Index,1])
-            if (match!=0) {
+            ;match := InStr(index,HSR_Array[A_Index,1])
+            if (index==HSR_Array[A_Index,1]) {
                HSR_Array[A_Index,1]:=linkTxt[1] ; Add cell text to array
                MsgBox % "Category " . index . " has been renamed to " . linkTxt[1] . "."
                GoSub, SaveHSR
@@ -285,8 +274,13 @@ AppendLinks:
       if (linkTxt[3] != "" && linkTxt[4] != "") {
          linkArray.InsertAt(linkTxt[2],[linkTxt[3],linkTxt[4]]) ; Insert at position
       } else if (linkTxt[3] == "") {
-         linkArray[linkTxt[2],2]:=linkTxt[4] ; Update URL at position
-         MsgBox % linkArray[linkTxt[2],1] . " now links to " . linkArray[linkTxt[2],2]
+         if (linkTxt[4]=="") {
+            linkArray.InsertAt(linkTxt[2],[linkTxt[3],linkTxt[4]]) 
+         } else {
+            linkArray[linkTxt[2],2]:=linkTxt[4] ; Update URL at position
+            MsgBox % linkArray[linkTxt[2],1] . " now links to " . linkArray[linkTxt[2],2]
+         }
+
       ;} else if (linkTxt[4] == "" && SubStr(UsrIn,0) == "+") {
       } else if (linkTxt[4] == "") {
          oldLabel:=linkArray[linkTxt[2],1]
@@ -314,8 +308,8 @@ AppendLinks:
 
    Loop % HSR_Array.MaxIndex()
    {
-      match := InStr(index,HSR_Array[A_Index,1])
-      if (match!=0) {
+      ;match := InStr(index,HSR_Array[A_Index,1])
+      if (index==HSR_Array[A_Index,1]) {
          HSR_Array[A_Index,2]:=linkString ; Add cell text to array
          break
       }
@@ -351,7 +345,7 @@ RemoveLinks:
       ;GoSub, DestroyGui
       ;return
    } else if (removeTxt[2] == "") {
-      MsgBox, 4, Continue?, % "Do you want to remove the link " . linkArray[Link,1] . "?"
+      MsgBox, 260, Continue?, % "Do you want to remove the link " . Trim(linkArray[Link,1]) . "?"
       IfMsgBox, No
          Return
       IfMsgBox, Yes
@@ -364,7 +358,7 @@ RemoveLinks:
       }
    } else if removeTxtIndex is integer
    {
-      MsgBox, 4, Continue?, % "Do you want to remove the link " . linkArray[removeTxt[2],1] . "?"
+      MsgBox, 260, Continue?, % "Do you want to remove the link " . Trim(linkArray[removeTxt[2],1]) . "?"
       IfMsgBox, No
          Return
       IfMsgBox, Yes
@@ -379,9 +373,9 @@ RemoveLinks:
    ;MsgBox % linkString
    Loop % HSR_Array.MaxIndex()
    {
-      match := InStr(index,HSR_Array[A_Index,1])
+      ;match := InStr(index,HSR_Array[A_Index,1])
       ;MsgBox % HSR_Array[xPos,2] . "`n" . index
-      if (match!=0) {
+      if (index==HSR_Array[A_Index,1]) {
          HSR_Array[A_Index,2]:=linkString
          ;MsgBox % linkString
          break
@@ -393,6 +387,21 @@ RemoveLinks:
       GoSub, DestroyGui
       GoSub, BuildMainGUI
    }
+return
+
+BuildLiteGUI:
+   Gosub, LoadMenu
+   GoSub, SetTheme
+   Gui, Add, Edit, r1 vUsrIn x10 y10 w230 h30
+   Gui, Add, Button, Default x250 y10 w50 h20 , Submit
+   Gui -Caption
+   Gui +ToolWindow
+   MouseGetPos, mouseX, mouseY
+   w:=310
+   h:=40
+   xPos:=mouseX - (w/3)
+   yPos:=mouseY - (h/2)
+   Gui, Show, x%xPos% y%yPos% h%h% w%w%, HyperSearch Lite
 return
 
 BuildMainGUI:
@@ -410,10 +419,15 @@ BuildMainGUI:
    Gui, Add, ListBox, vLink x160 y45 w280 h295 0x100 Choose1 AltSubmit gActivateLinks
    Gui, Add, Button, Default x390 y10 w50 h20 -Tabstop, Submit
    ; Generated UsrIng SmartGUI Creator 4.0
-   ;Gui -Caption
+   Gui -Caption
    Gui +ToolWindow
    Gui -SysMenu
-   Gui, Show, h350 w450, HyperSearch
+   MouseGetPos, mouseX, mouseY
+   h:=350
+   w:=450
+   xPos:=mouseX - (w/2)
+   yPos:=mouseY - (h/2)
+   Gui, Show, h%h% w%w% x%xPos% y%yPos%, HyperSearch
    Control, Choose, %lastIndex%, Listbox1
 return
 
@@ -427,7 +441,8 @@ BuildHSRArray:
          c:=A_Index ; Column number
          if (A_Index==1 && r>1) ; Only search first column
          {
-            dup := InStr(indexList,A_LoopField) ; Detect duplicates
+            chck:=A_LoopField . "|"
+            dup := InStr(indexList,chck) ; Detect duplicates
             if (dup==0){
                indexList .= A_LoopField . "|" ; Build index list for listbox
                indexArray.Push(A_LoopField)
@@ -497,42 +512,39 @@ EditFav:
    GoSub, DestroyGui
 return
 
-EditSearch:
-   search:=StrSplit(UsrIn,">",,2)
-   if (search[2] ~= "i)Duck.*Duck.*Go") {
-      IniRead, DDG, HS_Settings.ini, Search Engine, DuckDuckGo
-      searchEngine:="""" . DDG . """"
-      IniWrite, %searchEngine%, HS_Settings.ini, Search Engine, Default
-      MsgBox, Your default search engine is now set to Duck Duck Go.
-   } else if (search[2] ~= "i)Google") {
-      IniRead, Google, HS_Settings.ini, Search Engine, Google
-      searchEngine:="""" . Google . """"
-      IniWrite, %searchEngine%, HS_Settings.ini, Search Engine, Default
-      MsgBox, Your default search engine is now set to Google.
-   } else if (search[2] ~= "i)Bing") {
-      IniRead, Bing, HS_Settings.ini, Search Engine, Bing
-      searchEngine:="""" . Bing . """"
-      IniWrite, %searchEngine%, HS_Settings.ini, Search Engine, Default
-      MsgBox, Your default search engine is now set to Bing.
-   } else
-      MsgBox, Invalid search engine. Available options:`n-Google`n-Duck Duck Go`n-Bing
-return
-
 EditSettings:
    search:=StrSplit(UsrIn,">",,3)
-   if (search[2] ~= "i)d.rk") {
+   if (search[2] ~= "i)d.{0,1}rk") {
       IniWrite, 1, HS_Settings.ini, Settings, DkMd
-      MsgBox, Dark theme applied.
+      ;MsgBox, Dark theme applied.
    } else if (search[2] ~= "i)light") {
       IniWrite, 0, HS_Settings.ini, Settings, DkMd
-      MsgBox, Light theme applied.
+      ;MsgBox, Light theme applied.
    } else if (search[2] ~= "i)min") {
       IniWrite, 1, HS_Settings.ini, Settings, MinMode
-      MsgBox, Min mode applied.
+      ;MsgBox, Min mode applied.
    } else if (search[2] ~= "i)max") {
       IniWrite, 0, HS_Settings.ini, Settings, MinMode
-      MsgBox, Max mode applied.
-   } else if (search[2] ~= "i)h.*k.*1") {
+      ;MsgBox, Max mode applied.
+   } else if (search[2] ~= "i)s.{0,2}rch") {
+      if (search[3] ~= "i)D.{0,4}D.{0,4}G.{0,1}") {
+         IniRead, DDG, HS_Settings.ini, Search Engine, DuckDuckGo
+         searchEngine:="""" . DDG . """"
+         IniWrite, %searchEngine%, HS_Settings.ini, Search Engine, Default
+         MsgBox, Your default search engine is now set to Duck Duck Go.
+      } else if (search[3] ~= "i)G.{0,2}gl.{0,1}") {
+         IniRead, Google, HS_Settings.ini, Search Engine, Google
+         searchEngine:="""" . Google . """"
+         IniWrite, %searchEngine%, HS_Settings.ini, Search Engine, Default
+         MsgBox, Your default search engine is now set to Google.
+      } else if (search[3] ~= "i)B.{0,1}ng") {
+         IniRead, Bing, HS_Settings.ini, Search Engine, Bing
+         searchEngine:="""" . Bing . """"
+         IniWrite, %searchEngine%, HS_Settings.ini, Search Engine, Default
+         MsgBox, Your default search engine is now set to Bing.
+      } else
+         MsgBox, Invalid search engine. Available options:`n-Google`n-Duck Duck Go`n-Bing
+   } else if (search[2] ~= "i)h.{0,2}k.{0,2}1") {
       failsafe:=GUIHotkey
       usrHotkey:=search[3]
       search[3] := StrReplace(search[3], "win", "#")
@@ -555,7 +567,7 @@ EditSettings:
       }
       Hotkey, %GUIHotkey%, on
       MsgBox % "Hotkey 1 has been set to " . usrHotkey
-   } else if (search[2] ~= "i)h.*k.*2") {
+   } else if (search[2] ~= "i)h.{0,2}k.{0,2}2") {
       failsafe:=hiHotkey
       usrHotkey:=search[3]
       search[3] := StrReplace(search[3], "win", "#")
@@ -578,15 +590,15 @@ EditSettings:
       }
       Hotkey, %hiHotkey%, on
       MsgBox % "Hotkey 2 has been set to " . usrHotkey
-   } else if (search[2] ~= "i)trans.*") {
+   } else if (search[2] ~= "i)trans.{0,7}") {
       transVal := search[3]
       if transVal is integer
       {
          transPercent := Round((transVal / 100) * 255)
          IniWrite, %transPercent%, HS_Settings.ini, Settings, Trans
-         MsgBox, % "Transparency is set to " . transVal . "%"
+         ;MsgBox, % "Transparency is set to " . transVal . "%"
       } else
-         MsgBox, Value should be a number between 1-255.
+         MsgBox, Value should be a number.
    }
 return
 
@@ -683,11 +695,28 @@ Help:
 return
 
 FocusHS:
-   WinActivate, HyperSearch
+   if WinActive("HyperSearch" || "HyperSearch Lite") {
+      MsgBox, Yes
+      return
+   }
+   else {
+      MsgBox, No
+      GoSub, DestroyGui
+      MouseGetPos, mouseX, mouseY
+      if (min == 1) { ; Activate minimal UI
+         GoSub, BuildLiteGUI
+         Return
+      } else { ; Activate main UI
+         GoSub, BuildMainGUI
+         Return
+      }
+   }
 return
 
 DestroyGui:
    Hotkey, %GUIHotkey%, LoadGUI
+   mouseX=
+   mouseY=
    ;Hotkey, RButton, off
    GuiControl,+AltSubmit,Index
    GuiControlGet,lastIndex,,Index
