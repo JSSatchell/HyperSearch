@@ -5,7 +5,7 @@ Menu, Tray, Icon, shell32.dll, 210 ; Magnifying glass icon
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #SingleInstance force
-CoordMode, Mouse
+CoordMode, Mouse ; , Screen
 ;#InstallMouseHook
 ;#InstallKeybdHook
 
@@ -31,6 +31,9 @@ If !FileExist("HSR_Master.csv") {
 }
 
 lastIndex:=1
+;SysGet, mon, Monitor
+;SysGet, vW, 78
+;SysGet, vH, 79
 
 Hotkey, %GUIHotkey%, LoadGUI
 Hotkey, %hiHotkey%, searchHighlight
@@ -396,12 +399,11 @@ BuildLiteGUI:
    Gui, Add, Button, Default x250 y10 w50 h20 , Submit
    Gui -Caption
    Gui +ToolWindow
-   MouseGetPos, mouseX, mouseY
+   ;MouseGetPos, mouseX, mouseY
    w:=310
    h:=40
-   xPos:=mouseX - (w/3)
-   yPos:=mouseY - (h/2)
-   Gui, Show, x%xPos% y%yPos% h%h% w%w%, HyperSearch Lite
+   GoSub, SetMonitorBounds
+   Gui, Show, x%Final_x% y%Final_y% h%h% w%w%, HyperSearch Lite
 return
 
 BuildMainGUI:
@@ -422,14 +424,43 @@ BuildMainGUI:
    Gui -Caption
    Gui +ToolWindow
    Gui -SysMenu
-   MouseGetPos, mouseX, mouseY
+   ;MouseGetPos, mouseX, mouseY
    h:=350
    w:=450
-   xPos:=mouseX - (w/2)
-   yPos:=mouseY - (h/2)
-   Gui, Show, h%h% w%w% x%xPos% y%yPos%, HyperSearch
+
+	GoSub, SetMonitorBounds
+   
+   Gui, Show, h%h% w%w% x%Final_x% y%Final_y%, HyperSearch
    Control, Choose, %lastIndex%, Listbox1
 return
+
+SetMonitorBounds:
+   ;;;;;;Adapted from this thread: https://www.autohotkey.com/boards/viewtopic.php?t=54557
+	
+   ; get the mouse coordinates first
+	;Coordmode, Mouse, Screen	; use Screen, so we can compare the coords with the sysget information`
+	MouseGetPos, mouseX, mouseY
+
+	SysGet, MonitorCount, 80	; monitorcount, so we know how many monitors there are, and the number of loops we need to do
+	Loop, %MonitorCount%
+	{
+		SysGet, mon%A_Index%, Monitor, %A_Index%	; "Monitor" will get the total desktop space of the monitor, including taskbars
+
+		if ( mouseX >= mon%A_Index%left ) && ( mouseX < mon%A_Index%right ) && ( mouseY >= mon%A_Index%top ) && ( mouseY < mon%A_Index%bottom )
+		{
+			ActiveMon := A_Index
+			break
+		}
+	}
+
+   SysGet, mwa%ActiveMon%, MonitorWorkArea, %ActiveMon% ; "MonitorWorkArea" will get the desktop space of the monitor EXcluding taskbars
+
+   xPos:=mouseX - (w)
+   yPos:=mouseY - (h)
+   
+   Final_x := max(mwa%ActiveMon%left, min(xPos, mwa%ActiveMon%right-(w*2)))
+	Final_y := max(mwa%ActiveMon%top, min(yPos, mwa%ActiveMon%bottom-30-(h*2)))
+	return
 
 BuildHSRArray:
    Loop, Parse, HSR_String, `n, `r ; Build HSR_Array
