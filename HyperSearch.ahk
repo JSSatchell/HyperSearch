@@ -138,12 +138,14 @@ SetMonitorBounds:
 	}
 
    SysGet, mwa%ActiveMon%, MonitorWorkArea, %ActiveMon% ; "MonitorWorkArea" will get the desktop space of the monitor EXcluding taskbars
-
-   xPos:=mouseX - (w)
-   yPos:=mouseY - (h)
-   
-   Final_x := max(mwa%ActiveMon%left, min(xPos, mwa%ActiveMon%right-(w*2)))
-	Final_y := max(mwa%ActiveMon%top, min(yPos, mwa%ActiveMon%bottom-30-(h*2)))
+   ;MsgBox % A_ScreenDPI
+   ;;;;; mult * 2 for 4K monitors
+   adj := A_ScreenDPI/96
+   xPos:=mouseX - ((w/2)*adj)
+   yPos:=mouseY - ((h/2)*adj)
+   buff := 15*adj
+   Final_x := max(mwa%ActiveMon%left, min(xPos, mwa%ActiveMon%right-(w*adj)))
+	Final_y := max(mwa%ActiveMon%top, min(yPos, mwa%ActiveMon%bottom-buff-(h*adj)))
 return
 
 BuildHSRArray:
