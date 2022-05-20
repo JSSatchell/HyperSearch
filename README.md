@@ -67,6 +67,10 @@ To add a link at the bottom of the links list, substitute "v" for the position v
 
     +v+GDrive+drive.google.com
     
+To move a link to a new position, type the starting position of the link, followed by "~" and the new positon of the link
+
+    1~5
+
 To remove the current link, type "Delete-" and select "Yes" on the prompt
 
     Delete-
@@ -75,9 +79,13 @@ To remove a link at a specific position, type "Delete-" followed by the position
 
     Delete-1
 
-To remove the current category, type "Delete--" and select "Yes" on the prompt
+To remove a sequential range of links, type "Delete-" followed by the first number of the range, then "-" and the last number of the range
 
-    Delete--
+    Delete-1-5
+
+To remove the current category, type "Delete-" followed by "Category" and select "Yes" on the prompt
+
+    Delete-Category
 
 ---
 
