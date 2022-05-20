@@ -76,6 +76,116 @@ searchHighlight:
    return 
 }
 
+BuildLiteGUI:
+   Gosub, LoadMenu
+   GoSub, SetTheme
+   Gui, Add, Edit, r1 vUsrIn x10 y10 w230 h30
+   Gui, Add, Button, Default x250 y10 w50 h20 , Submit
+   Gui -Caption
+   Gui +ToolWindow
+   ;MouseGetPos, mouseX, mouseY
+   w:=310
+   h:=40
+   GoSub, SetMonitorBounds
+   Gui, Show, x%Final_x% y%Final_y% h%h% w%w%, HyperSearch Lite
+return
+
+BuildMainGUI:
+   Gosub, LoadMenu
+   GoSub, SetTheme
+   HSR_Array:=[]
+   indexList=
+   indexArray:=[]
+   FileRead, HSR_String, HSR_Master.csv
+   ;indexIndex:=0
+   ;MsgBox, %HSR_String%
+   GoSub, BuildHSRArray
+   Gui, Add, Edit, r1 vUsrIn x160 y10 w220 h30 gInputAlgorithm
+   Gui, Add, ListBox, vIndex x10 y10 w140 h330 0x100 VScroll Choose%lastIndex% sort -AltSubmit gLoadLinks, %indexList%
+   Gui, Add, ListBox, vLink x160 y45 w280 h295 0x100 Choose1 AltSubmit gActivateLinks
+   Gui, Add, Button, Default x390 y10 w50 h20 -Tabstop, Submit
+   ; Generated UsrIng SmartGUI Creator 4.0
+   Gui -Caption
+   Gui +ToolWindow
+   Gui -SysMenu
+   ;MouseGetPos, mouseX, mouseY
+   h:=350
+   w:=450
+
+	GoSub, SetMonitorBounds
+   
+   Gui, Show, h%h% w%w% x%Final_x% y%Final_y%, HyperSearch
+   Control, Choose, %lastIndex%, Listbox1
+return
+
+SetMonitorBounds:
+   ;;;;;;Adapted from this thread: https://www.autohotkey.com/boards/viewtopic.php?t=54557
+	
+   ; get the mouse coordinates first
+	;Coordmode, Mouse, Screen	; use Screen, so we can compare the coords with the sysget information`
+	MouseGetPos, mouseX, mouseY
+
+	SysGet, MonitorCount, 80	; monitorcount, so we know how many monitors there are, and the number of loops we need to do
+	Loop, %MonitorCount%
+	{
+		SysGet, mon%A_Index%, Monitor, %A_Index%	; "Monitor" will get the total desktop space of the monitor, including taskbars
+
+		if ( mouseX >= mon%A_Index%left ) && ( mouseX < mon%A_Index%right ) && ( mouseY >= mon%A_Index%top ) && ( mouseY < mon%A_Index%bottom )
+		{
+			ActiveMon := A_Index
+			break
+		}
+	}
+
+   SysGet, mwa%ActiveMon%, MonitorWorkArea, %ActiveMon% ; "MonitorWorkArea" will get the desktop space of the monitor EXcluding taskbars
+
+   xPos:=mouseX - (w)
+   yPos:=mouseY - (h)
+   
+   Final_x := max(mwa%ActiveMon%left, min(xPos, mwa%ActiveMon%right-(w*2)))
+	Final_y := max(mwa%ActiveMon%top, min(yPos, mwa%ActiveMon%bottom-30-(h*2)))
+return
+
+BuildHSRArray:
+   Loop, Parse, HSR_String, `n, `r ; Build HSR_Array
+   {
+      r:=A_Index ; Row number
+      ;MsgBox, % A_LoopField
+      Loop, Parse, A_LoopField, CSV
+      {
+         c:=A_Index ; Column number
+         if (A_Index==1 && r>1) ; Only search first column
+         {
+            chck:=A_LoopField . "|"
+            dup := InStr(indexList,chck) ; Detect duplicates
+            if (dup==0){
+               indexList .= A_LoopField . "|" ; Build index list for listbox
+               indexArray.Push(A_LoopField)
+            }
+         }
+         HSR_Array[r,c]:=A_LoopField
+      }
+      indexIndex++
+   }
+return
+
+SaveHSR:
+   HSR_String=
+   Loop, % HSR_Array.MaxIndex()   ; concat string array
+   {
+      r:=A_Index
+      Loop, % HSR_Array[A_Index].MaxIndex()
+      {
+         HSR_String .= A_Index == HSR_Array[r].MaxIndex() ? """" . HSR_Array[r,A_Index] . """" : """" . HSR_Array[r,A_Index] . ""","
+      }
+      if (A_Index!=HSR_Array.MaxIndex())
+         HSR_String .= "`n"
+   }
+   ;MsgBox % HSR_String
+   FileDelete,HSR_Master.csv
+   FileAppend,%HSR_String%, HSR_Master.csv
+return
+
 /*
 RButton::
 {
@@ -148,9 +258,15 @@ ButtonSubmit:
             GoSub, LoadLinks
             GuiControl, +redraw, Link
             GuiControl,,UsrIn,
-         } else if (UsrIn ~= "i)del.*\-.*"){
+         } else if (UsrIn ~= "i)del.{0,3}\-[0-9|cat.{0,5}]*"){
             GuiControl, -redraw, Link
             GoSub, RemoveLinks
+            GoSub, LoadLinks
+            GuiControl, +redraw, Link
+            GuiControl,,UsrIn,
+         } else if (UsrIn ~= "[1-9]*~[1-9]*"){
+            GuiControl, -redraw, Link
+            GoSub, ReorderLinks
             GoSub, LoadLinks
             GuiControl, +redraw, Link
             GuiControl,,UsrIn,
@@ -304,31 +420,18 @@ AppendLinks:
       }
    }
    
-   Loop % linkArray.MaxIndex() ; Build cell text
-   {
-      linkString .= "[" . linkArray[A_Index,1] . "](" . linkArray[A_Index,2] . ")"
-   }
-
-   Loop % HSR_Array.MaxIndex()
-   {
-      ;match := InStr(index,HSR_Array[A_Index,1])
-      if (index==HSR_Array[A_Index,1]) {
-         HSR_Array[A_Index,2]:=linkString ; Add cell text to array
-         break
-      }
-   }
-   GoSub, SaveHSR
+   GoSub, UpdateLinkList
 
    ;MsgBox % appendTxt
 return
 
 RemoveLinks:
    Gui, Submit, noHide
-   removeTxt:=StrSplit(UsrIn,"-",,2)
+   removeTxt:=StrSplit(UsrIn,"-",,3)
    linkString=
    removeTxtIndex:=removeTxt[2]
    ;Sample: 1DELETE-2LinkIndex
-   if (removeTxt[2] == "-") {
+   if (removeTxt[2] ~= "i)cat.{0,5}") {
       MsgBox, 260, Continue?, Do you want to delete all of the data in %index%?
       ifMsgBox, No
          return
@@ -336,17 +439,42 @@ RemoveLinks:
       {
          Loop % HSR_Array.MaxIndex()
          {
-            match := InStr(index,HSR_Array[A_Index,1])
+            ;match := InStr(index,HSR_Array[A_Index,1])
             ;MsgBox % HSR_Array[xPos,2] . "`n" . index
-            if (match!=0) {
+            if (index==HSR_Array[A_Index,1]) {
                HSR_Array.RemoveAt(A_Index)
                ;MsgBox % linkString
                break
             }
          }
+         GoSub, UpdateLinkList
+         GoSub, DestroyGui
+         GoSub, BuildMainGUI
       }
       ;GoSub, DestroyGui
       ;return
+   } else if (removeTxt[2] != "" && removeTxt[3] != "") {
+      numRemove := max(removeTxt[2],removeTxt[3])-min(removeTxt[2],removeTxt[3]) + 1
+      ;MsgBox % numRemove
+      start:=min(removeTxt[2],removeTxt[3])
+      i:=start
+      chckList := 
+      Loop, %numRemove%
+      {
+         chckList .= linkArray[i,1] . "`n"
+         i++
+      }
+      
+      MsgBox, 260, Continue?, % "Do you want to remove the links`n" . RTrim(chckList,"`n") . "?"
+      IfMsgBox, No
+         Return
+      IfMsgBox, Yes
+      {
+         Loop, %numRemove%
+         {
+            linkArray.RemoveAt(start)
+         }
+      }
    } else if (removeTxt[2] == "") {
       MsgBox, 260, Continue?, % "Do you want to remove the link " . Trim(linkArray[Link,1]) . "?"
       IfMsgBox, No
@@ -354,12 +482,8 @@ RemoveLinks:
       IfMsgBox, Yes
       {
          linkArray.RemoveAt(Link)
-         Loop % linkArray.MaxIndex()
-         {
-            linkString .= "[" . linkArray[A_Index,1] . "](" . linkArray[A_Index,2] . ")"
-         }
       }
-   } else if removeTxtIndex is integer
+   } else
    {
       MsgBox, 260, Continue?, % "Do you want to remove the link " . Trim(linkArray[removeTxt[2],1]) . "?"
       IfMsgBox, No
@@ -367,13 +491,30 @@ RemoveLinks:
       IfMsgBox, Yes
       {
          linkArray.RemoveAt(removeTxt[2])
-         Loop % linkArray.MaxIndex()
-         {
-            linkString .= "[" . linkArray[A_Index,1] . "](" . linkArray[A_Index,2] . ")"
-         }
       }
-   } ;else 
-   ;MsgBox % linkString
+   }
+
+   GoSub, UpdateLinkList
+return
+
+ReorderLinks:
+   Gui, Submit, noHide
+   linkString=
+   swap:=[]
+   swapTxt:=StrSplit(UsrIn,"~",,2)
+   swap:=linkArray[swapTxt[1]]
+   linkArray.RemoveAt(swapTxt[1])
+   linkArray.InsertAt(swapTxt[2],[swap[1],swap[2]])
+
+   GoSub, UpdateLinkList
+return
+
+UpdateLinkList:
+   Loop % linkArray.MaxIndex()
+   {
+      linkString .= "[" . linkArray[A_Index,1] . "](" . linkArray[A_Index,2] . ")"
+   }
+   
    Loop % HSR_Array.MaxIndex()
    {
       ;match := InStr(index,HSR_Array[A_Index,1])
@@ -386,120 +527,6 @@ RemoveLinks:
    }
 
    GoSub, SaveHSR
-   if (removeTxt[2] == "-"){
-      GoSub, DestroyGui
-      GoSub, BuildMainGUI
-   }
-return
-
-BuildLiteGUI:
-   Gosub, LoadMenu
-   GoSub, SetTheme
-   Gui, Add, Edit, r1 vUsrIn x10 y10 w230 h30
-   Gui, Add, Button, Default x250 y10 w50 h20 , Submit
-   Gui -Caption
-   Gui +ToolWindow
-   ;MouseGetPos, mouseX, mouseY
-   w:=310
-   h:=40
-   GoSub, SetMonitorBounds
-   Gui, Show, x%Final_x% y%Final_y% h%h% w%w%, HyperSearch Lite
-return
-
-BuildMainGUI:
-   Gosub, LoadMenu
-   GoSub, SetTheme
-   HSR_Array:=[]
-   indexList=
-   indexArray:=[]
-   FileRead, HSR_String, HSR_Master.csv
-   ;indexIndex:=0
-   ;MsgBox, %HSR_String%
-   GoSub, BuildHSRArray
-   Gui, Add, Edit, r1 vUsrIn x160 y10 w220 h30 gInputAlgorithm
-   Gui, Add, ListBox, vIndex x10 y10 w140 h330 0x100 VScroll Choose%lastIndex% sort -AltSubmit gLoadLinks, %indexList%
-   Gui, Add, ListBox, vLink x160 y45 w280 h295 0x100 Choose1 AltSubmit gActivateLinks
-   Gui, Add, Button, Default x390 y10 w50 h20 -Tabstop, Submit
-   ; Generated UsrIng SmartGUI Creator 4.0
-   Gui -Caption
-   Gui +ToolWindow
-   Gui -SysMenu
-   ;MouseGetPos, mouseX, mouseY
-   h:=350
-   w:=450
-
-	GoSub, SetMonitorBounds
-   
-   Gui, Show, h%h% w%w% x%Final_x% y%Final_y%, HyperSearch
-   Control, Choose, %lastIndex%, Listbox1
-return
-
-SetMonitorBounds:
-   ;;;;;;Adapted from this thread: https://www.autohotkey.com/boards/viewtopic.php?t=54557
-	
-   ; get the mouse coordinates first
-	;Coordmode, Mouse, Screen	; use Screen, so we can compare the coords with the sysget information`
-	MouseGetPos, mouseX, mouseY
-
-	SysGet, MonitorCount, 80	; monitorcount, so we know how many monitors there are, and the number of loops we need to do
-	Loop, %MonitorCount%
-	{
-		SysGet, mon%A_Index%, Monitor, %A_Index%	; "Monitor" will get the total desktop space of the monitor, including taskbars
-
-		if ( mouseX >= mon%A_Index%left ) && ( mouseX < mon%A_Index%right ) && ( mouseY >= mon%A_Index%top ) && ( mouseY < mon%A_Index%bottom )
-		{
-			ActiveMon := A_Index
-			break
-		}
-	}
-
-   SysGet, mwa%ActiveMon%, MonitorWorkArea, %ActiveMon% ; "MonitorWorkArea" will get the desktop space of the monitor EXcluding taskbars
-
-   xPos:=mouseX - (w)
-   yPos:=mouseY - (h)
-   
-   Final_x := max(mwa%ActiveMon%left, min(xPos, mwa%ActiveMon%right-(w*2)))
-	Final_y := max(mwa%ActiveMon%top, min(yPos, mwa%ActiveMon%bottom-30-(h*2)))
-	return
-
-BuildHSRArray:
-   Loop, Parse, HSR_String, `n, `r ; Build HSR_Array
-   {
-      r:=A_Index ; Row number
-      ;MsgBox, % A_LoopField
-      Loop, Parse, A_LoopField, CSV
-      {
-         c:=A_Index ; Column number
-         if (A_Index==1 && r>1) ; Only search first column
-         {
-            chck:=A_LoopField . "|"
-            dup := InStr(indexList,chck) ; Detect duplicates
-            if (dup==0){
-               indexList .= A_LoopField . "|" ; Build index list for listbox
-               indexArray.Push(A_LoopField)
-            }
-         }
-         HSR_Array[r,c]:=A_LoopField
-      }
-      indexIndex++
-   }
-return
-
-SaveHSR:
-   HSR_String=
-   Loop, % HSR_Array.MaxIndex()   ; concat string array
-   {
-      r:=A_Index
-      Loop, % HSR_Array[A_Index].MaxIndex()
-      {
-         HSR_String .= A_Index == HSR_Array[r].MaxIndex() ? """" . HSR_Array[r,A_Index] . """" : """" . HSR_Array[r,A_Index] . ""","
-      }
-      if (A_Index!=HSR_Array.MaxIndex())
-         HSR_String .= "`n"
-   }
-   ;MsgBox % HSR_String
-   FileDelete,HSR_Master.csv
-   FileAppend,%HSR_String%, HSR_Master.csv
 return
 
 FavButtonClick:
