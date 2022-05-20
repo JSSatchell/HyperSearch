@@ -133,17 +133,13 @@ To set a new link for an existing favorite without updating the label, use ">>"
     
 ---
 
-**CHANGE THE DEFAULT SEARCH ENGINE**
-
-To update the search engine, type "Search>" and then either "Google", "Bing", or "DuckDuckGo". DuckDuckGo is currently the default.
-    
-    Search>Google
-
----
-
 **UPDATE THE SETTINGS**
 
 Begin the search with "Set>"
+
+To update the search engine, type "Search>" and then either "Google", "Bing", or "DuckDuckGo". DuckDuckGo is currently the default.
+    
+    Set>Search>Google
 
 To edit the hotkeys, type "Hotkey1/2>" followed by your desired hotkey
 
