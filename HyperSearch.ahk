@@ -25,27 +25,27 @@ else
 IniRead, searchEngine, HS_Settings.ini, Search Engine, Default
 IniRead, GUIHotkey, HS_Settings.ini, Settings, GUIHotkey
 IniRead, hiHotkey, HS_Settings.ini, Settings, HighlightHotkey
+IniRead, jump, HS_Settings.ini, Settings, jump
 
 If !FileExist("HSR_Master.csv") {
    GoSub, GenerateHSR
 }
 
+index:=1
 lastIndex:=1
-;SysGet, mon, Monitor
-;SysGet, vW, 78
-;SysGet, vH, 79
+mouseKeep:=0
+urlDisplay=
 
 Hotkey, %GUIHotkey%, LoadGUI
 Hotkey, %hiHotkey%, searchHighlight
+Hotkey, RButton, RMenu
+Hotkey, RButton, off
 return
 
 LoadGUI:
 { 
    GoSub, DestroyGUI
    IniRead, min, HS_Settings.ini, Settings, MinMode
-   ;Hotkey, %GUIHotkey%, DestroyGUI
-   ;Hotkey, RButton, on
-   ;Hotkey, RButton, RightClickMenu
    if (min == 1) { ; Activate minimal UI
       GoSub, BuildLiteGUI
       Return
@@ -88,6 +88,7 @@ BuildLiteGUI:
    h:=40
    GoSub, SetMonitorBounds
    Gui, Show, x%Final_x% y%Final_y% h%h% w%w%, HyperSearch Lite
+   index:=lastIndex
 return
 
 BuildMainGUI:
@@ -97,13 +98,21 @@ BuildMainGUI:
    indexList=
    indexArray:=[]
    FileRead, HSR_String, HSR_Master.csv
+   Hotkey, RButton, RMenu
+   Hotkey, RButton, on
    ;indexIndex:=0
    ;MsgBox, %HSR_String%
    GoSub, BuildHSRArray
    Gui, Add, Edit, r1 vUsrIn x160 y10 w220 h30 gInputAlgorithm
-   Gui, Add, ListBox, vIndex x10 y10 w140 h330 0x100 VScroll Choose%lastIndex% sort -AltSubmit gLoadLinks, %indexList%
-   Gui, Add, ListBox, vLink x160 y45 w280 h295 0x100 Choose1 AltSubmit gActivateLinks
+   Gui, Add, ListBox, vIndex x10 y10 w140 h315 0x100 VScroll Choose%lastIndex% sort -AltSubmit gLoadLinks, %indexList%
+   Gui, Add, ListBox, vLink x160 y45 w280 h280 0x100 Choose1 AltSubmit gActivateLinks
    Gui, Add, Button, Default x390 y10 w50 h20 -Tabstop, Submit
+   Gui, Add, Text, x10 y330 w430, %urlDisplay%
+   if (themeSel==1)
+      GuiControl, +cSilver, Static1
+   else
+      GuiControl, +c595959, Static1
+
    ; Generated UsrIng SmartGUI Creator 4.0
    Gui -Caption
    Gui +ToolWindow
@@ -112,9 +121,9 @@ BuildMainGUI:
    h:=350
    w:=450
 
-	GoSub, SetMonitorBounds
-   
+   GoSub, SetMonitorBounds
    Gui, Show, h%h% w%w% x%Final_x% y%Final_y%, HyperSearch
+
    Control, Choose, %lastIndex%, Listbox1
 return
 
@@ -122,8 +131,9 @@ SetMonitorBounds:
    ;;;;;;Adapted from this thread: https://www.autohotkey.com/boards/viewtopic.php?t=54557
 	
    ; get the mouse coordinates first
-	;Coordmode, Mouse, Screen	; use Screen, so we can compare the coords with the sysget information`
-	MouseGetPos, mouseX, mouseY
+   if (mouseKeep==0) {
+      MouseGetPos, mouseX, mouseY
+   }
 
 	SysGet, MonitorCount, 80	; monitorcount, so we know how many monitors there are, and the number of loops we need to do
 	Loop, %MonitorCount%
@@ -141,11 +151,14 @@ SetMonitorBounds:
    ;MsgBox % A_ScreenDPI
    ;;;;; mult * 2 for 4K monitors
    adj := A_ScreenDPI/96
-   xPos:=mouseX - ((w/2)*adj)
-   yPos:=mouseY - ((h/2)*adj)
+   xAdj:=(w/2)*adj
+   yAdj:=(h/2)*adj
+   xPos:=mouseX - xAdj
+   yPos:=mouseY - yAdj
    buff := 15*adj
-   Final_x := max(mwa%ActiveMon%left, min(xPos, mwa%ActiveMon%right-(w*adj)))
-	Final_y := max(mwa%ActiveMon%top, min(yPos, mwa%ActiveMon%bottom-buff-(h*adj)))
+   Final_x := jump==1 ? max(mwa%ActiveMon%left, min(xPos, mwa%ActiveMon%right-(w*adj))) : ((((mwa%ActiveMon%right - mwa%ActiveMon%left) / 2) + mwa%ActiveMon%left)-xAdj) ; /adj
+	Final_y := jump==1 ? max(mwa%ActiveMon%top, min(yPos, mwa%ActiveMon%bottom-buff-(h*adj))) : ((((mwa%ActiveMon%bottom - mwa%ActiveMon%top) / 2) + mwa%ActiveMon%top)-yAdj)
+   ;msgbox % final_x . ", " . final_y
 return
 
 BuildHSRArray:
@@ -188,23 +201,72 @@ SaveHSR:
    FileAppend,%HSR_String%, HSR_Master.csv
 return
 
-/*
-RButton::
-{
-   MouseGetPos,,,,cont
+
+RMenu:
+   MouseGetPos,,,,currentControl
    ;MsgBox % cont
-   if (cont=="ListBox2"){
+   ;MsgBox, Right click!
+   if (currentControl=="ListBox2"){
       Click,
-      Menu, RCLB2, Add, Add above, DestroyGui
-      Menu, RCLB2, Add, Add below, DestroyGui
-      Menu, RCLB2, Add, Rename, DestroyGui
-      Menu, RCLB2, Add, Reassign link, DestroyGui
-      Menu, RCLB2, Add, Delete, DestroyGui
+      Menu, RCLB2, Add, Copy Link, CopyLink
+      Menu, RCLB2, Add, Delete, DelLink
       Menu, RCLB2, Show
+   } else if (currentControl=="ListBox1") {
+      Click,
+      Menu, RCLB1, Add, Delete, DelCat
+      Menu, RCLB1, Show
+   } else
+      Click, R
+return
+
+CopyLink:
+   activeLink:=linkArray[Link,2]
+   clipboard = %activeLink%
+return
+
+DelLink:
+   GuiControl, -redraw, Link
+   MsgBox, 260, Continue?, % "Do you want to remove the link " . Trim(linkArray[Link,1]) . "?"
+   IfMsgBox, No
+      Return
+   IfMsgBox, Yes
+      linkArray.RemoveAt(Link)
+   GoSub, UpdateLinkList
+   GoSub, LoadLinks
+   GuiControl, +redraw, Link
+   GuiControl,,UsrIn,
+return
+
+DelCat:
+   GuiControl, -redraw, Link
+   MsgBox, 260, Continue?, Do you want to delete all of the data in %index%?
+   ifMsgBox, No
+      return
+   IfMSgBox, Yes
+   {
+      Loop % HSR_Array.MaxIndex()
+      {
+         ;match := InStr(index,HSR_Array[A_Index,1])
+         ;MsgBox % HSR_Array[xPos,2] . "`n" . index
+         if (index==HSR_Array[A_Index,1]) {
+            HSR_Array.RemoveAt(A_Index)
+            linkArray:=[]
+            linkString=
+            ;MsgBox % linkString
+            break
+         }
+      }
+      mouseKeep:=1
+      GoSub, UpdateLinkList
+      GoSub, DestroyGui
+      GoSub, BuildMainGUI
+      mouseKeep:=0
    }
-   return
-}
-*/
+   GoSub, UpdateLinkList
+   GoSub, LoadLinks
+   GuiControl, +redraw, Link
+   GuiControl,,UsrIn,
+return
 
 GoogleSearch:
 ;;;;;Adapted from this thread: https://www.autohotkey.com/board/topic/13404-google-search-on-highlighted-text/
@@ -247,13 +309,20 @@ ButtonSubmit:
          if (UsrIn ~= "^\*.*"){
             GuiControl, focus, Link
          } else if (RegExMatch(UsrIn, "^[1-9]>.*")){
+            mouseKeep=1
             GoSub, EditFav
             GoSub, DestroyGui
             GoSub, LoadGUI
+            mouseKeep=0
          } else if (UsrIn ~= "i)^set>.*"){
+            mouseKeep=1
+            setMax=0
             GoSub, EditSettings
             GoSub, DestroyGui
             GoSub, LoadGUI
+            ;if (setMax=1)
+            ;   GuiControl, Choose, index, % "|" . lastIndex
+            mouseKeep=0
          } else if (UsrIn ~= ".*\+.*"){
             GuiControl, -redraw, Link
             GoSub, AppendLinks
@@ -266,7 +335,7 @@ ButtonSubmit:
             GoSub, LoadLinks
             GuiControl, +redraw, Link
             GuiControl,,UsrIn,
-         } else if (UsrIn ~= "[1-9]*~[1-9]*"){
+         } else if (UsrIn ~= "[1-9]*~[1-9]*" || UsrIn ~= "[1-9]*%[1-9]*"){
             GuiControl, -redraw, Link
             GoSub, ReorderLinks
             GoSub, LoadLinks
@@ -337,6 +406,8 @@ LoadLinks:
       newPos := currentLink.Pos(1)
       labelIndex++
    }
+   urlDisplay:=linkArray[1,2]
+   GuiControl,,Static1, %urlDisplay%
    GuiControl,,Link, |
    GuiControl,,Link, %labelList%
    GuiControl, Choose, Link, 1
@@ -353,6 +424,9 @@ ActivateLinks:
          searchQuery := linkArray[Link,2]
          GoSub, GoogleSearch
       }
+   } else {
+      urlDisplay:=linkArray[Link,2]
+      GuiControl,,Static1,%urlDisplay%
    }
 return
 
@@ -385,8 +459,10 @@ AppendLinks:
          FileAppend, %appendTxt%, HSR_Master.csv
          ;return
       }
+      mouseKeep:=1
       GoSub, DestroyGui
       GoSub, BuildMainGUI
+      mouseKeep:=0
       return
    } else if (linkIndex == "v") {
       linkArray.push([linkTxt[3],linkTxt[4]]) ; Add link in last position
@@ -433,7 +509,7 @@ RemoveLinks:
    linkString=
    removeTxtIndex:=removeTxt[2]
    ;Sample: 1DELETE-2LinkIndex
-   if (removeTxt[2] ~= "i)cat.{0,5}") {
+   if (removeTxt[2] ~= "i)cat.{0,5}") { ; remove cateogry
       MsgBox, 260, Continue?, Do you want to delete all of the data in %index%?
       ifMsgBox, No
          return
@@ -445,17 +521,21 @@ RemoveLinks:
             ;MsgBox % HSR_Array[xPos,2] . "`n" . index
             if (index==HSR_Array[A_Index,1]) {
                HSR_Array.RemoveAt(A_Index)
+               linkArray:=[]
+               linkString=
                ;MsgBox % linkString
                break
             }
          }
+         mouseKeep:=1
          GoSub, UpdateLinkList
          GoSub, DestroyGui
          GoSub, BuildMainGUI
+         mouseKeep:=0
       }
       ;GoSub, DestroyGui
       ;return
-   } else if (removeTxt[2] != "" && removeTxt[3] != "") {
+   } else if (removeTxt[2] != "" && removeTxt[3] != "") { ; Remove list of links
       numRemove := max(removeTxt[2],removeTxt[3])-min(removeTxt[2],removeTxt[3]) + 1
       ;MsgBox % numRemove
       start:=min(removeTxt[2],removeTxt[3])
@@ -477,7 +557,7 @@ RemoveLinks:
             linkArray.RemoveAt(start)
          }
       }
-   } else if (removeTxt[2] == "") {
+   } else if (removeTxt[2] == "") { ; Remove current link
       MsgBox, 260, Continue?, % "Do you want to remove the link " . Trim(linkArray[Link,1]) . "?"
       IfMsgBox, No
          Return
@@ -485,8 +565,7 @@ RemoveLinks:
       {
          linkArray.RemoveAt(Link)
       }
-   } else
-   {
+   } else { ; Remove specified link
       MsgBox, 260, Continue?, % "Do you want to remove the link " . Trim(linkArray[removeTxt[2],1]) . "?"
       IfMsgBox, No
          Return
@@ -501,13 +580,15 @@ return
 
 ReorderLinks:
    Gui, Submit, noHide
+   if (instr(UsrIn, "~"))
+      swapTxt:=StrSplit(UsrIn,"~",,2)
+   else if (instr(UsrIn, "%"))
+      swapTxt:=StrSplit(UsrIn,"`%",,2)
    linkString=
    swap:=[]
-   swapTxt:=StrSplit(UsrIn,"~",,2)
    swap:=linkArray[swapTxt[1]]
    linkArray.RemoveAt(swapTxt[1])
    linkArray.InsertAt(swapTxt[2],[swap[1],swap[2]])
-
    GoSub, UpdateLinkList
 return
 
@@ -576,16 +657,20 @@ EditSettings:
    search:=StrSplit(UsrIn,">",,3)
    if (search[2] ~= "i)d.{0,1}rk") {
       IniWrite, 1, HS_Settings.ini, Settings, DkMd
-      ;MsgBox, Dark theme applied.
    } else if (search[2] ~= "i)light") {
       IniWrite, 0, HS_Settings.ini, Settings, DkMd
-      ;MsgBox, Light theme applied.
    } else if (search[2] ~= "i)min") {
       IniWrite, 1, HS_Settings.ini, Settings, MinMode
-      ;MsgBox, Min mode applied.
    } else if (search[2] ~= "i)max") {
       IniWrite, 0, HS_Settings.ini, Settings, MinMode
-      ;MsgBox, Max mode applied.
+   } else if (search[2] ~= "i)j.mp") {
+      if (search[3]~="i)on"){
+         IniWrite, 1, HS_Settings.ini, Settings, jump
+         IniRead, jump, HS_Settings.ini, Settings, jump
+      } else if (search[3]~="i)off") {
+         IniWrite, 0, HS_Settings.ini, Settings, jump
+         IniRead, jump, HS_Settings.ini, Settings, jump
+      }
    } else if (search[2] ~= "i)s.{0,2}rch") {
       if (search[3] ~= "i)D.{0,4}D.{0,4}G.{0,1}") {
          IniRead, DDG, HS_Settings.ini, Search Engine, DuckDuckGo
@@ -659,6 +744,8 @@ EditSettings:
          ;MsgBox, % "Transparency is set to " . transVal . "%"
       } else
          MsgBox, Value should be a number.
+   } else {
+      MsgBox, Invalid settings option.
    }
 return
 
@@ -695,10 +782,12 @@ CheckSettings:
    lastSetting:=settingsArray[settingsArray.maxIndex()]
    lastSettingArray:=StrSplit(lastSetting,"=")
    ;MsgBox % lastSettingArray[1]
-   newSettings:="`nGUIHotkey=#Space`nHighlightHotkey=^#Space"
    if (lastSettingArray[1]=="MinMode") {
-      FileAppend, %newSettings%, HS_Settings.ini
+      newSettings:="`nGUIHotkey=#Space`nHighlightHotkey=^#Space`nJump=1"
+   } else if (lastSettingArray[1]=="HighlightHotkey") {
+      newSettings:="`nJump=1"
    }
+   FileAppend, %newSettings%, HS_Settings.ini
 return
 
 GenerateSettings:
@@ -738,6 +827,7 @@ Trans=230
 MinMode=0
 GUIHotkey=#Space
 HighlightHotkey=^#Space
+Jump=1
    ), HS_Settings.ini
 return
 
@@ -754,32 +844,12 @@ Help:
    GoSub, DestroyGui
 return
 
-FocusHS:
-   if WinActive("HyperSearch" || "HyperSearch Lite") {
-      MsgBox, Yes
-      return
-   }
-   else {
-      MsgBox, No
-      GoSub, DestroyGui
-      MouseGetPos, mouseX, mouseY
-      if (min == 1) { ; Activate minimal UI
-         GoSub, BuildLiteGUI
-         Return
-      } else { ; Activate main UI
-         GoSub, BuildMainGUI
-         Return
-      }
-   }
-return
-
 DestroyGui:
    Hotkey, %GUIHotkey%, LoadGUI
-   mouseX=
-   mouseY=
-   ;Hotkey, RButton, off
+   Hotkey, RButton, off
    GuiControl,+AltSubmit,Index
-   GuiControlGet,lastIndex,,Index
+   GUI, Submit
+   lastIndex:=index
    HSR_String=
    HSR_Array=
    linkArray=
