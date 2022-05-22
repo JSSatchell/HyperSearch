@@ -225,6 +225,7 @@ CopyLink:
 return
 
 DelLink:
+   linkString=
    GuiControl, -redraw, Link
    MsgBox, 260, Continue?, % "Do you want to remove the link " . Trim(linkArray[Link,1]) . "?"
    IfMsgBox, No
@@ -541,10 +542,15 @@ RemoveLinks:
       start:=min(removeTxt[2],removeTxt[3])
       i:=start
       chckList := 
-      Loop, %numRemove%
+      Loop, 11
       {
-         chckList .= linkArray[i,1] . "`n"
-         i++
+         if (A_Index<=10) {
+            chckList .= linkArray[i,1] . "`n"
+            i++
+         } else {
+            andMore:=numRemove-10
+            chckList .= "and " . andMore . " others"
+         }
       }
       
       MsgBox, 260, Continue?, % "Do you want to remove the links`n" . RTrim(chckList,"`n") . "?"
