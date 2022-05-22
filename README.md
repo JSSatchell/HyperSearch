@@ -155,6 +155,10 @@ For reference: "Hotkey1" opens the GUI, "Hotkey2" searches for highlighted text
 
     Set>Hotkey1>ctrl+space
 
+To turn on/off window jumping, type "Jump>On/Off"
+
+    Set>Jump>Off
+
 To set the interface to the more streamlined one of HyperSearch Lite, type "Min"
 
     Set>Min
@@ -163,10 +167,10 @@ To return to the full HyperSearch interface, type "Max"
 
     Set>Max
 
-To set the mode, type either "Dark" or "Light". Dark is the default
+To set the color mode, type either "Dark" or "Light". Dark is the default
 
     Set>Light
     
-To set the transparency, enter a number between 1-100. Default is 80%
+To set the transparency, type "Transparency>" and enter a number between 1-100. Default is 80%
 
     Set>Transparency>80
