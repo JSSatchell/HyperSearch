@@ -3,7 +3,22 @@ Instant internet search, minus the distractions.
 
 In editor language: It's FX Console/Excalibur for the internet.
 
-**PREVIEW**
+### GUIDE INDEX
+
+ - [Overview](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#overview)
+ - [General Usage](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#general-usage)
+ - [Navigation](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#navigation)
+ - [Adding & Removing Categories & Links](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#adding--removing-categories--links)
+ - [Editing Category Names, Links, Labels, & URLs](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#editing-category-names-link-labels-and-urls)
+ - [Crosslinking](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#crosslinking)
+ - [Update Favorites](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#update-favorites)
+ - [Update the Settings](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#update-the-settings)
+
+---
+
+#### OVERVIEW
+
+**Preview:**
 
 ![image](https://user-images.githubusercontent.com/99512204/168928729-1a696160-30fa-4657-a4bf-3b37fe9a349f.png)
 
@@ -13,7 +28,7 @@ It also provides convenient hotkeys for searching any highlighted text as well a
 
 HyperSearch Lite is a streamlined version of the searchbar and favorites without the bookmark manager.
 
-**PREVIEW**
+**Preview:**
 
 ![image](https://user-images.githubusercontent.com/99512204/166970969-f181093f-1e91-4174-80d2-007b428868f4.png)
 
@@ -21,9 +36,11 @@ HyperSearch Lite is also built into HyperSearch and can be activated by typing "
 
     Set>Min
 
+[^TOP](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#hypersearch)
+
 ---
 
-**GENERAL USAGE**
+#### GENERAL USAGE 
 
 Open the GUI with Win + Space or search any highlighted text with Ctrl + Win + Space.
 
@@ -31,9 +48,11 @@ The app will stay open in the system tray unless closed from the tray or via "Ex
 
 When the app is launched for the first time it will create HS_Settings.ini and HSR_Master.csv sidecar files. If the .exe is moved the .ini must stay in the same root folder or the settings will be reset. Do not rename these files or new ones will be created the next time the app is launced and settings will be reset to default.
 
+[^TOP](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#hypersearch)
+
 ---
 
-**NAVIGATION**
+#### NAVIGATION
 
 Navigate the favorites menu easily with Alt + 1-9 or Alt + X for the exit menu.
 
@@ -47,9 +66,11 @@ If the search starts with * pressing Enter will set the focus to the links windo
 
 If focus is on the search bar, Tab will first go to the index which can be navigated by pressing the letter corresponding to the first letter of the desired category. A second Tab will highlight the links window.
 
+[^TOP](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#hypersearch)
+
 ---
 
-**ADDING AND REMOVING CATEGORIES & LINKS**
+#### ADDING & REMOVING CATEGORIES & LINKS
 
 To add a category, type the category name and "+"
 
@@ -87,9 +108,11 @@ To remove the current category, type "Delete-" followed by "Category" and select
 
     Delete-Category
 
+[^TOP](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#hypersearch)
+
 ---
 
-**EDITING CATEGORY NAMES, LINK LABELS, AND URLs**
+#### EDITING CATEGORY NAMES, LINK LABELS, AND URLs
 
 To rename the current category, type the new category name followed by "++"
 
@@ -111,17 +134,21 @@ To reassign a URL of a link at a specific position, precede the command with "+"
 
     +1++New URL
 
+[^TOP](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#hypersearch)
+
 ---
 
-**CROSSLINKING**
+#### CROSSLINKING
 
 To have a link activate a specific category in the index, encapsulate the exact text of the desired category with "<>" and set the link URL to "*"
 
     +1+<Category Label>+*
 
+[^TOP](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#hypersearch)
+
 ---
 
-**UPDATE FAVORITES**
+#### UPDATE FAVORITES
 
 To update favorites, type a number 1-9 and then ">" followed by your desired label name then ">" followed by the link URL. For example:
  
@@ -139,9 +166,11 @@ To set a new link for an existing favorite without updating the label, use ">>"
 
     1>>drive.google.com
     
+[^TOP](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#hypersearch)
+
 ---
 
-**UPDATE THE SETTINGS**
+#### UPDATE THE SETTINGS
 
 Begin the search with "Set>"
 
@@ -174,3 +203,5 @@ To set the color mode, type either "Dark" or "Light". Dark is the default
 To set the transparency, type "Transparency>" and enter a number between 1-100. Default is 80%
 
     Set>Transparency>80
+    
+[^TOP](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#hypersearch)
