@@ -42,11 +42,13 @@ HyperSearch Lite is also built into HyperSearch and can be activated by typing "
 
 #### GENERAL USAGE 
 
-Open the GUI with Win + Space or search any highlighted text with Ctrl + Win + Space.
+Open the GUI with Win + Space or search any highlighted text with Ctrl + Win + Space. (These hotkeys can be reconfigured to user preference.)
+
+Close the GUI with Escape or "Close Window" from the "X" menu.
 
 The app will stay open in the system tray unless closed from the tray or via "Exit App" from the "X" menu.
 
-When the app is launched for the first time it will create HS_Settings.ini and HSR_Master.csv sidecar files. If the .exe is moved the .ini must stay in the same root folder or the settings will be reset. Do not rename these files or new ones will be created the next time the app is launced and settings will be reset to default.
+When the app is launched for the first time it will create HS_Settings.ini and HSR_Master.csv sidecar files. If the .exe is moved the .ini and .csv files must stay in the same root folder as the .exe or the settings will be reset. Do not rename these files or new ones will be created the next time the app is launched and the app will be reset to it's default configuration.
 
 [^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
 
