@@ -5,14 +5,14 @@ In editor language: It's FX Console/Excalibur for the internet.
 
 ### GUIDE INDEX
 
- - [Overview](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#overview)
- - [General Usage](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#general-usage)
- - [Navigation](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#navigation)
- - [Adding & Removing Categories & Links](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#adding--removing-categories--links)
- - [Editing Category Names, Links, Labels, & URLs](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#editing-category-names-link-labels-and-urls)
- - [Crosslinking](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#crosslinking)
- - [Update Favorites](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#update-favorites)
- - [Update the Settings](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#update-the-settings)
+ - [Overview](https://github.com/JSSatchell/HyperSearch#overview)
+ - [General Usage](https://github.com/JSSatchell/HyperSearch#general-usage)
+ - [Navigation](https://github.com/JSSatchell/HyperSearch#navigation)
+ - [Adding & Removing Categories & Links](https://github.com/JSSatchell/HyperSearch#adding--removing-categories--links)
+ - [Editing Category Names, Link Labels, and URLs](https://github.com/JSSatchell/HyperSearch#editing-category-names-link-labels-and-urls)
+ - [Crosslinking](https://github.com/JSSatchell/HyperSearch#crosslinking)
+ - [Update Favorites](https://github.com/JSSatchell/HyperSearch#update-favorites)
+ - [Update the Settings](https://github.com/JSSatchell/HyperSearch#update-the-settings)
 
 ---
 
@@ -36,7 +36,7 @@ HyperSearch Lite is also built into HyperSearch and can be activated by typing "
 
     Set>Min
 
-[^TOP](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#hypersearch)
+[^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
 
 ---
 
@@ -48,7 +48,7 @@ The app will stay open in the system tray unless closed from the tray or via "Ex
 
 When the app is launched for the first time it will create HS_Settings.ini and HSR_Master.csv sidecar files. If the .exe is moved the .ini must stay in the same root folder or the settings will be reset. Do not rename these files or new ones will be created the next time the app is launced and settings will be reset to default.
 
-[^TOP](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#hypersearch)
+[^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
 
 ---
 
@@ -66,7 +66,7 @@ If the search starts with * pressing Enter will set the focus to the links windo
 
 If focus is on the search bar, Tab will first go to the index which can be navigated by pressing the letter corresponding to the first letter of the desired category. A second Tab will highlight the links window.
 
-[^TOP](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#hypersearch)
+[^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
 
 ---
 
@@ -108,7 +108,7 @@ To remove the current category, type "Delete-" followed by "Category" and select
 
     Delete-Category
 
-[^TOP](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#hypersearch)
+[^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
 
 ---
 
@@ -134,7 +134,7 @@ To reassign a URL of a link at a specific position, precede the command with "+"
 
     +1++New URL
 
-[^TOP](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#hypersearch)
+[^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
 
 ---
 
@@ -144,7 +144,7 @@ To have a link activate a specific category in the index, encapsulate the exact 
 
     +1+<Category Label>+*
 
-[^TOP](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#hypersearch)
+[^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
 
 ---
 
@@ -166,7 +166,7 @@ To set a new link for an existing favorite without updating the label, use ">>"
 
     1>>drive.google.com
     
-[^TOP](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#hypersearch)
+[^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
 
 ---
 
@@ -204,4 +204,4 @@ To set the transparency, type "Transparency>" and enter a number between 1-100. 
 
     Set>Transparency>80
     
-[^TOP](https://github.com/JSSatchell/HyperSearch/edit/main/README.md#hypersearch)
+[^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
