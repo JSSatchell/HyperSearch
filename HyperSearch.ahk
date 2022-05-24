@@ -38,8 +38,41 @@ urlDisplay=
 
 Hotkey, %GUIHotkey%, LoadGUI
 Hotkey, %hiHotkey%, searchHighlight
-Hotkey, RButton, RMenu
-Hotkey, RButton, off
+
+GoSub, LocalHotkeysOff
+
++s::
+   send, {down}
+return
+
++a::
+   send, +{tab}
+return
+
++w::
+   send, {up}
+return
+
++d::
+   send, {Tab}
+return
+
+LocalHotkeysOff:
+Hotkey, RButton, RMenu, off
+Hotkey, +s, +s, off
+Hotkey, +a, +a, off
+Hotkey, +w, +w, off
+Hotkey, +d, +d, off
+Hotkey, ^c, CopyLink, off
+return
+
+LocalHotkeysOn:
+Hotkey, RButton, on
+Hotkey, +s, on
+Hotkey, +a, on
+Hotkey, +w, on
+Hotkey, +d, on
+Hotkey, ^c, on
 return
 
 LoadGUI:
@@ -98,8 +131,7 @@ BuildMainGUI:
    indexList=
    indexArray:=[]
    FileRead, HSR_String, HSR_Master.csv
-   Hotkey, RButton, RMenu
-   Hotkey, RButton, on
+   GoSub, LocalHotkeysOn
    ;indexIndex:=0
    ;MsgBox, %HSR_String%
    GoSub, BuildHSRArray
@@ -307,7 +339,7 @@ ButtonSubmit:
       GuiControl, focus, Link
    } else {
       if (UsrIn != ""){
-         if (UsrIn ~= "^\*.*"){
+         if (UsrIn ~= "^ .*"){
             GuiControl, focus, Link
          } else if (RegExMatch(UsrIn, "^[1-9]>.*")){
             mouseKeep=1
@@ -356,7 +388,7 @@ Return
 InputAlgorithm:
    Gui, Submit, noHide
    ;GuiControl, ChooseString, IndexList, |%UsrIn%
-   if(RegExMatch(UsrIn, "^\*.*"))
+   if(RegExMatch(UsrIn, "^ .*"))
    {
       GuiControl, ChooseString, index, % "|" . SubStr(UsrIn,2)
    }
@@ -852,7 +884,7 @@ return
 
 DestroyGui:
    Hotkey, %GUIHotkey%, LoadGUI
-   Hotkey, RButton, off
+   GoSub, LocalHotkeysOff
    GuiControl,+AltSubmit,Index
    GUI, Submit
    lastIndex:=index
