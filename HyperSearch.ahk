@@ -38,23 +38,67 @@ urlDisplay=
 
 Hotkey, %GUIHotkey%, LoadGUI
 Hotkey, %hiHotkey%, searchHighlight
-
 GoSub, LocalHotkeysOff
 
+;;;;; Initialize hotkeys
 +s::
-   send, {down}
+   GuiControlGet, currentControl, Focus
+   if (currentControl=="ListBox1" || currentControl=="ListBox2") {
+      send, {down}
+   } else if (currentControl=="Edit1") {
+      hotkey, +s, off
+      Send, +s
+      hotkey, +s, on
+   }
 return
 
 +a::
-   send, +{tab}
+   GuiControlGet, currentControl, Focus
+   if (currentControl=="ListBox1") {
+      send, {tab}
+   } else if (currentControl=="ListBox2") {
+      send, +{tab}
+   } else if (currentControl=="Edit1") {
+      hotkey, +a, off
+      Send, +a
+      hotkey, +a, on
+   }
 return
 
 +w::
-   send, {up}
+   GuiControlGet, currentControl, Focus
+   if (currentControl=="ListBox1" || currentControl=="ListBox2") {
+      send, {up}
+   } else if (currentControl=="Edit1") {
+      hotkey, +w, off
+      Send, +w
+      hotkey, +w, on
+   }
 return
 
 +d::
-   send, {Tab}
+   GuiControlGet, currentControl, Focus
+   if (currentControl=="ListBox1") {
+      send, {tab}
+   } else if (currentControl=="ListBox2") {
+      send, +{tab}
+   } else if (currentControl=="Edit1") {
+      hotkey, +d, off
+      Send, +d
+      hotkey, +d, on
+   }
+return
+
+!e::
+   Gui, Submit, noHide
+   if (linkArray[Link,2] == "*") {
+      linkLabel:=linkArray[Link,1]
+      RegExMatch(linkLabel, "O)<(.*?)>", match)
+      GuiControl, ChooseString, index, % "|" . match[1]
+   } else {
+      searchQuery := linkArray[Link,2]
+      GoSub, GoogleSearch
+   }
 return
 
 LocalHotkeysOff:
@@ -64,15 +108,19 @@ Hotkey, +a, +a, off
 Hotkey, +w, +w, off
 Hotkey, +d, +d, off
 Hotkey, ^c, CopyLink, off
+Hotkey, !e, !e, off
+Hotkey, LButton, ClickOff, off
 return
 
 LocalHotkeysOn:
 Hotkey, RButton, on
+Hotkey, LButton, on
 Hotkey, +s, on
 Hotkey, +a, on
 Hotkey, +w, on
 Hotkey, +d, on
 Hotkey, ^c, on
+Hotkey, !e, on
 return
 
 LoadGUI:
@@ -112,7 +160,10 @@ searchHighlight:
 BuildLiteGUI:
    Gosub, LoadMenu
    GoSub, SetTheme
+   Hotkey, LButton, on
+   ;GoSub, BuildLinksArray
    Gui, Add, Edit, r1 vUsrIn x10 y10 w230 h30
+   ;Gui, Add, ComboBox, vUsrIn x10 y10 w230 h30 simple r5 gAutoComplete, %allLabelList%
    Gui, Add, Button, Default x250 y10 w50 h20 , Submit
    Gui -Caption
    Gui +ToolWindow
@@ -127,10 +178,6 @@ return
 BuildMainGUI:
    Gosub, LoadMenu
    GoSub, SetTheme
-   HSR_Array:=[]
-   indexList=
-   indexArray:=[]
-   FileRead, HSR_String, HSR_Master.csv
    GoSub, LocalHotkeysOn
    ;indexIndex:=0
    ;MsgBox, %HSR_String%
@@ -194,6 +241,10 @@ SetMonitorBounds:
 return
 
 BuildHSRArray:
+   HSR_Array:=[]
+   indexList=
+   indexArray:=[]
+   FileRead, HSR_String, HSR_Master.csv
    Loop, Parse, HSR_String, `n, `r ; Build HSR_Array
    {
       r:=A_Index ; Row number
@@ -233,6 +284,16 @@ SaveHSR:
    FileAppend,%HSR_String%, HSR_Master.csv
 return
 
+ClickOff:
+   WinGet,hsID,ID,HyperSearch
+   MouseGetPos,,,winClick
+   ;MsgBox % hsID . "`n" . winClick
+   if (winClick!=hsID)
+      GoSub, DestroyGUI
+   Click, L, down
+   Keywait, %A_ThisHotkey%
+   Click, L, Up
+return
 
 RMenu:
    MouseGetPos,,,,currentControl
@@ -252,8 +313,15 @@ RMenu:
 return
 
 CopyLink:
-   activeLink:=linkArray[Link,2]
-   clipboard = %activeLink%
+   GuiControlGet, currentControl, Focus
+   if (currentControl!="Edit1") {
+      activeLink:=linkArray[Link,2]
+      clipboard = %activeLink%
+   } else {
+      hotkey, ^c, off
+      Send, ^c
+      hotkey, ^c, on
+   }
 return
 
 DelLink:
@@ -471,7 +539,18 @@ AppendLinks:
    linkIndex:=linkTxt[2]
    ;MsgBox % indexLabel . "`n" . linkIndex . "`n" . linkName . "`n" . linkURL
    if (linkTxt[1] != "") { ; Add new category
+      Loop % HSR_Array.MaxIndex()
+      {
+         ;match := InStr(index,HSR_Array[A_Index,1])
+         ;MsgBox % HSR_Array[A_Index,1] . "`n" . index
+         if (linkTxt[1]=HSR_Array[A_Index,1]) {
+            MsgBox, Category already exists.
+            skip:=1
+            return
+         }
+      }
       ;MsgBox % SubStr(UsrIn,-1)
+      
       if (linkTxt[2] != "" && linkTxt[3] != "") { ; Add first link
          appendTxt:="`n""" . linkTxt[1] . """," . """[" . linkTxt[2] . "](" . linkTxt[3] . ")"""
          FileAppend, %appendTxt%, HSR_Master.csv
@@ -873,7 +952,8 @@ GenerateHSR:
    FileAppend,
    (
 "Index Label","[Link1 Label](Link1 URL)[Link2 Label](Link2 URL)..."
-"Quick Start Guide","[NAVIGATION REFERENCE]()[Type * to search the category index on the left]()[Tab between control windows]()[Press Enter after typing * to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE]()[Edit Favorites - 'Favorite#>Label>URL']()[Add Index Category - 'Category Name+']()[Add link - '+Link Name+Link URL']()[Add at Position - '+Position#+Link Name+LinkURL']()[Remove Selected Link - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete--']()[ ]()[SETTINGS]()[Min/Max Mode - 'Set>Min/Max']()[Dark/Light Mode - 'Set>Dark/Light']()[Transparency - 'Set>Transparency>Percentage']()[]()[CLICK HERE for full feature list & updates](https://github.com/JSSatchell/HyperSearch)"
+"*Quick Access","[Add a new link]()"
+"* Quick Start Guide","[NAVIGATION REFERENCE]()[Type * to search the category index on the left]()[Tab between control windows]()[Press Enter after typing * to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE]()[Edit Favorites - 'Favorite#>Label>URL']()[Add Index Category - 'Category Name+']()[Add link - '+Link Name+Link URL']()[Add at Position - '+Position#+Link Name+LinkURL']()[Remove Selected Link - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete--']()[ ]()[SETTINGS]()[Min/Max Mode - 'Set>Min/Max']()[Dark/Light Mode - 'Set>Dark/Light']()[Transparency - 'Set>Transparency>Percentage']()[]()[CLICK HERE for full feature list & updates](https://github.com/JSSatchell/HyperSearch)"
    ), HSR_Master.csv
 return
 
