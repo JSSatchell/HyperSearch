@@ -286,9 +286,10 @@ return
 
 ClickOff:
    WinGet,hsID,ID,HyperSearch
+   WinGet,contID,ID,Continue?
    MouseGetPos,,,winClick
    ;MsgBox % hsID . "`n" . winClick
-   if (winClick!=hsID)
+   if (winClick!=hsID && winClick!=contID)
       GoSub, DestroyGUI
    Click, L, down
    Keywait, %A_ThisHotkey%
