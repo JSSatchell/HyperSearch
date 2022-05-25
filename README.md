@@ -20,7 +20,7 @@ In editor language: It's FX Console/Excalibur for the internet.
 
 **Preview:**
 
-![image](https://user-images.githubusercontent.com/99512204/168928729-1a696160-30fa-4657-a4bf-3b37fe9a349f.png)
+![image](https://user-images.githubusercontent.com/99512204/170307230-564138b0-1e40-4a6b-a034-a20c347755da.png)
 
 HyperSearch is a bookmark managing utility that focuses on speed and direct access to what your looking for without the fluff and distractions of the internet.
 
@@ -30,7 +30,7 @@ HyperSearch Lite is a streamlined version of the searchbar and favorites without
 
 **Preview:**
 
-![image](https://user-images.githubusercontent.com/99512204/166970969-f181093f-1e91-4174-80d2-007b428868f4.png)
+![image](https://user-images.githubusercontent.com/99512204/170307480-cb98fd58-2e9d-4307-b294-ebc4d7541c55.png)
 
 HyperSearch Lite is also built into HyperSearch and can be activated by typing `Set>Min`
 
@@ -86,6 +86,8 @@ To add a link to the current category, type `+` followed the name of the link fo
 
     +GMail+mail.google.com
     
+_Note: Link names should not contain the characters_ `[` `]` `(` `)` _or_ `|`
+
 To add a link at a specific position, type `+` followed by the position number followed by `+` followed by the link name followed by `+` followed by the URL
 
     +1+Calendar+calendar.google.com
@@ -206,7 +208,7 @@ To set the color mode, type either `Dark` or `Light`. Dark is the default
 
     Set>Light
     
-To set the transparency, type `Transparency>` and enter a number between `1` - `100`. Default is 80%
+To set the transparency, type `Transparency>` and enter a number between `1` - `100`. Default is 90%
 
     Set>Transparency>80
     
