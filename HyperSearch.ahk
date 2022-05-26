@@ -41,51 +41,39 @@ Hotkey, %hiHotkey%, searchHighlight
 GoSub, LocalHotkeysOff
 
 ;;;;; Initialize hotkeys
-+s::
+!s::
    GuiControlGet, currentControl, Focus
    if (currentControl=="ListBox1" || currentControl=="ListBox2") {
       send, {down}
    } else if (currentControl=="Edit1") {
-      hotkey, +s, off
-      Send, +s
-      hotkey, +s, on
+      send, +{tab}
    }
 return
 
-+a::
+!a::
    GuiControlGet, currentControl, Focus
-   if (currentControl=="ListBox1") {
-      send, {tab}
-   } else if (currentControl=="ListBox2") {
+   if (currentControl=="ListBox1" || currentControl=="ListBox2") {
       send, +{tab}
    } else if (currentControl=="Edit1") {
-      hotkey, +a, off
-      Send, +a
-      hotkey, +a, on
+      send, {tab}
    }
 return
 
-+w::
+!w::
    GuiControlGet, currentControl, Focus
    if (currentControl=="ListBox1" || currentControl=="ListBox2") {
       send, {up}
    } else if (currentControl=="Edit1") {
-      hotkey, +w, off
-      Send, +w
-      hotkey, +w, on
+      send, {tab}
    }
 return
 
-+d::
+!d::
    GuiControlGet, currentControl, Focus
-   if (currentControl=="ListBox1") {
+   if (currentControl=="ListBox1" || currentControl=="ListBox2") {
       send, {tab}
-   } else if (currentControl=="ListBox2") {
-      send, +{tab}
    } else if (currentControl=="Edit1") {
-      hotkey, +d, off
-      Send, +d
-      hotkey, +d, on
+      send, +{tab}
    }
 return
 
@@ -95,22 +83,22 @@ return
 
 LocalHotkeysOff:
 Hotkey, RButton, RMenu, off
-Hotkey, +s, +s, off
-Hotkey, +a, +a, off
-Hotkey, +w, +w, off
-Hotkey, +d, +d, off
+Hotkey, !s, !s, off I2
+Hotkey, !a, !a, off I2
+Hotkey, !w, !w, off I2
+Hotkey, !d, !d, off I2
 Hotkey, ^c, CopyLink, off
-Hotkey, !e, !e, off
+Hotkey, !e, !e, off I2
 Hotkey, LButton, ClickOff, off
 return
 
 LocalHotkeysOn:
 Hotkey, RButton, on
 Hotkey, LButton, on
-Hotkey, +s, on
-Hotkey, +a, on
-Hotkey, +w, on
-Hotkey, +d, on
+Hotkey, !s, on
+Hotkey, !a, on
+Hotkey, !w, on
+Hotkey, !d, on
 Hotkey, ^c, on
 Hotkey, !e, on
 return
