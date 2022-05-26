@@ -90,15 +90,7 @@ return
 return
 
 !e::
-   Gui, Submit, noHide
-   if (linkArray[Link,2] == "*") {
-      linkLabel:=linkArray[Link,1]
-      RegExMatch(linkLabel, "O)<(.*?)>", match)
-      GuiControl, ChooseString, index, % "|" . match[1]
-   } else {
-      searchQuery := linkArray[Link,2]
-      GoSub, GoogleSearch
-   }
+   send, {enter}
 return
 
 LocalHotkeysOff:
@@ -573,8 +565,10 @@ AppendLinks:
          ;return
       }
       mouseKeep:=1
+      newCat:=linkTxt[1]
       GoSub, DestroyGui
       GoSub, BuildMainGUI
+      GuiControl, ChooseString, index, %newCat%
       mouseKeep:=0
       return
    } else if (linkIndex == "v") {
@@ -660,8 +654,10 @@ RemoveLinks:
             chckList .= linkArray[i,1] . "`n"
             i++
          } else {
-            andMore:=numRemove-10
-            chckList .= "and " . andMore . " others"
+            if (numRemove>10) {
+               andMore:=numRemove-10
+               chckList .= "and " . andMore . " others"
+            }
          }
       }
       
@@ -952,9 +948,9 @@ return
 GenerateHSR:
    FileAppend,
    (
-"Index Label","[Link1 Label](Link1 URL)[Link2 Label](Link2 URL)..."
-"*Quick Access","[Add a new link]()"
-"* Quick Start Guide","[NAVIGATION REFERENCE]()[Type * to search the category index on the left]()[Tab between control windows]()[Press Enter after typing * to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE]()[Edit Favorites - 'Favorite#>Label>URL']()[Add Index Category - 'Category Name+']()[Add link - '+Link Name+Link URL']()[Add at Position - '+Position#+Link Name+LinkURL']()[Remove Selected Link - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete--']()[ ]()[SETTINGS]()[Min/Max Mode - 'Set>Min/Max']()[Dark/Light Mode - 'Set>Dark/Light']()[Transparency - 'Set>Transparency>Percentage']()[]()[CLICK HERE for full feature list & updates](https://github.com/JSSatchell/HyperSearch)"
+"Category Label","Link List"
+"*Quick Access","[<Quick Start Guide>](*)"
+"Quick Start Guide","[NAVIGATION REFERENCE](https://github.com/JSSatchell/HyperSearch#navigation)[Press Space to search the category index on the left]()[Tab between control windows]()[Press Enter after typing Space to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE](https://github.com/JSSatchell/HyperSearch#adding--removing-categories--links)[Edit Favorites - 'Favorite#>Label>URL'](https://github.com/JSSatchell/HyperSearch#update-favorites)[Add Index Category - 'Category Name+']()[Add link - '+Link Name+Link URL']()[Add at Position - '+Position#+Link Name+LinkURL']()[Remove Selected Link - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete-Category']()[ ]()[SETTINGS](https://github.com/JSSatchell/HyperSearch#update-the-settings)[Min/Max Mode - 'Set>Min/Max']()[Dark/Light Mode - 'Set>Dark/Light']()[Transparency - 'Set>Transparency>Percentage']()[]()[CLICK HERE for full feature list & updates](https://github.com/JSSatchell/HyperSearch)"
    ), HSR_Master.csv
 return
 
