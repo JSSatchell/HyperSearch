@@ -81,6 +81,13 @@ return
    send, {enter}
 return
 
+!q::
+   GuiControlGet, currentControl, Focus
+   if (currentControl=="Edit1") {
+      send, +{home}
+   }
+return
+
 LocalHotkeysOff:
 Hotkey, RButton, RMenu, off
 Hotkey, !s, !s, off I2
@@ -89,6 +96,7 @@ Hotkey, !w, !w, off I2
 Hotkey, !d, !d, off I2
 Hotkey, ^c, CopyLink, off
 Hotkey, !e, !e, off I2
+Hotkey, !q, !q, off I2
 Hotkey, LButton, ClickOff, off
 return
 
@@ -101,6 +109,7 @@ Hotkey, !w, on
 Hotkey, !d, on
 Hotkey, ^c, on
 Hotkey, !e, on
+Hotkey, !q, on
 return
 
 LoadGUI:
@@ -427,6 +436,11 @@ ButtonSubmit:
             searchQuery = %UsrIn%
             GoSub, GoogleSearch
          } 
+      } else if (linkArray[Link,2] == "*") {
+         linkLabel:=linkArray[Link,1]
+         RegExMatch(linkLabel, "O)<(.*?)>", match)
+         GuiControl, ChooseString, index, % "|" . match[1]
+         return
       } else {
          searchQuery := linkArray[Link,2]
          GoSub, GoogleSearch
