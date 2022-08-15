@@ -16,6 +16,8 @@ if (ProgID = "ChromeHTML")
    Browser := "chrome.exe"
 if (ProgID = "FirefoxURL")
    Browser := "firefox.exe"
+if (ProgID = "BraveHTML")
+   Browser := "brave.exe"
 
 If !FileExist("HS_Settings.ini")
    Gosub, GenerateSettings
@@ -26,8 +28,9 @@ IniRead, searchEngine, HS_Settings.ini, Search Engine, Default
 IniRead, GUIHotkey, HS_Settings.ini, Settings, GUIHotkey
 IniRead, hiHotkey, HS_Settings.ini, Settings, HighlightHotkey
 IniRead, jump, HS_Settings.ini, Settings, jump
+IniRead, repo, HS_Settings.ini, Settings, Repository
 
-If !FileExist("HSR_Master.csv") {
+If !FileExist(repo) {
    GoSub, GenerateHSR
 }
 
@@ -233,7 +236,8 @@ BuildHSRArray:
    HSR_Array:=[]
    indexList=
    indexArray:=[]
-   FileRead, HSR_String, HSR_Master.csv
+   ;IniRead, repo, HS_Settings.ini, Settings, Repository
+   FileRead, HSR_String, %repo%
    Loop, Parse, HSR_String, `n, `r ; Build HSR_Array
    {
       r:=A_Index ; Row number
@@ -269,8 +273,8 @@ SaveHSR:
          HSR_String .= "`n"
    }
    ;MsgBox % HSR_String
-   FileDelete,HSR_Master.csv
-   FileAppend,%HSR_String%, HSR_Master.csv
+   FileDelete,%repo%
+   FileAppend,%HSR_String%, %repo%
 return
 
 ClickOff:
@@ -414,6 +418,19 @@ ButtonSubmit:
             ;if (setMax=1)
             ;   GuiControl, Choose, index, % "|" . lastIndex
             mouseKeep=0
+         } else if (UsrIn ~= "i)^import>.*") {
+            if (UsrIn ~= "i).*html$") {
+               GoSub, ImportChrome
+            } else if (UsrIn ~= "i).*csv$") {
+               GoSub, ImportCSV
+            } else
+               MsgBox, Unsupported format
+            GoSub, DestroyGui
+            GoSub, LoadGui
+         } else if (UsrIn ~= "i)^load>.*") {
+            GoSub, LoadRepo
+            GoSub, DestroyGui
+            GoSub, LoadGui
          } else if (UsrIn ~= ".*\+.*"){
             GuiControl, -redraw, Link
             GoSub, AppendLinks
@@ -548,7 +565,7 @@ AppendLinks:
       
       if (linkTxt[2] != "" && linkTxt[3] != "") { ; Add first link
          appendTxt:="`n""" . linkTxt[1] . """," . """[" . linkTxt[2] . "](" . linkTxt[3] . ")"""
-         FileAppend, %appendTxt%, HSR_Master.csv
+         FileAppend, %appendTxt%, %repo%
          ;return
       } else if (SubStr(UsrIn,-1) == "++") { ; Rename current category
          Loop % HSR_Array.MaxIndex()
@@ -563,7 +580,7 @@ AppendLinks:
          }
       } else { ; Add category with blank first entry
          appendTxt:="`n""" . linkTxt[1] . """," . """[ ]()"""
-         FileAppend, %appendTxt%, HSR_Master.csv
+         FileAppend, %appendTxt%, %repo%
          ;return
       }
       mouseKeep:=1
@@ -851,7 +868,7 @@ EditSettings:
       }
       Hotkey, %hiHotkey%, on
       MsgBox % "Hotkey 2 has been set to " . usrHotkey
-   } else if (search[2] ~= "i)trans.{0,7}") {
+   } else if (search[2] ~= "i)op.{0,5}") {
       transVal := search[3]
       if transVal is integer
       {
@@ -863,6 +880,143 @@ EditSettings:
    } else {
       MsgBox, Invalid settings option.
    }
+return
+
+ImportChrome:
+   replace:=0
+   search:=StrSplit(UsrIn,">",,2)
+   MsgBox, 3, Import options, How would you like to import?`nYes: Append to current links`nNo: Replace all links with bookmarks
+   IfMsgBox, No
+      replace:=1
+   IfMsgBox, Cancel
+      return
+   bkmkLines:=[]
+   ;MsgBox % "Link: " . search[2]
+   bkmkPath:=search[2]
+   FileRead, bkmk, %bkmkPath%
+   Loop, Parse, bkmk, `n, `r ; Build HSR_Array
+   {
+      ;MsgBox, % A_LoopField
+      bkmkLines.push(A_LoopField)
+   }
+   ;MsgBox % bkmk
+   fullArray := []
+
+   if (replace==1)
+   {
+      fullArray[1,1]:="Category Name"
+      fullArray[1,2]:="Links List"
+   }
+
+   catIndex:=2
+
+   Loop % bkmkLines.maxIndex()
+   {
+      numTabs:=0
+      charPos:=6
+      currentLine:=bkmkLines[A_Index]
+      Loop, Parse, currentLine
+      {
+         if (A_LoopField == A_Space) {
+               numTabs++
+               charPos++
+         } else 
+               break
+      }
+      head:=SubStr(currentLine,charPos,2)
+      ;MsgBox % head
+      numTabs := round(numTabs/4)
+
+      if (head == "H3") { ; New category
+         RegExMatch(currentLine, "O)<H3 .*>(.*?)</H3>", thisCat)
+         fullArray[catIndex,1]:=thisCat[1]
+         nxtTab:=numTabs+1
+         i:=A_Index+2
+         subTabs:=numTabs+1
+         while  subTabs > numTabs ;&& i != bkmkLines.maxIndex()
+         {
+               ;MsgBox % "Loop start`n" . subTabs . " > " . numTabs . "`n" . currentLine
+               subLine:=bkmkLines[i]
+               ;MsgBox % subLine
+               subTabs:=0
+               subCharPos:=6
+               ;MsgBox % subLine
+               Loop, Parse, subLine
+               {
+                  if (A_LoopField == A_Space) {
+                     subTabs++
+                     subCharPos++
+                  } else 
+                     break
+               }
+               subTabs := round(subTabs/4)
+               ;MsgBox % subLine . " : " . subTabs
+               subHead:=SubStr(subLine,subCharPos,2)
+               ;MsgBox % subTabs . " = " . nxtTab . "`n" . subLine . "`n" . currentLine
+               if (subTabs == nxtTab) {
+                  ;MsgBox % subHead
+                  if (subHead=="H3") {
+                     ;MsgBox % subTabs . " : " . nxtTab
+                     RegExMatch(subLine, "O)<H3 .*>(.*?)</H3>", subCat)
+                     ;MsgBox % thisCat[1] . " : " . numTabs . "`n" . subCat[1] . " : " . subTabs
+                     fullArray[catIndex,2] .= "[<" . subCat[1] . ">](*)"
+                  } else if (subHead == "A ") {
+                     RegExMatch(subLine, "O)<A HREF=""(.*?)""", subLink)
+                     RegExMatch(subLine, "O)<A .*>(.*?)</A>", subLabel)
+                     ;MsgBox % "Current label: " . thisLabel[1] . "`nCurrent link: " . thisLink[1]
+                     if (subLabel[1]!="") {
+                           labelReplace := StrReplace(subLabel[1], "|", "-")
+                     } else {
+                           labelReplace := subLink[1]
+                     }
+
+                     fullArray[catIndex,2] .= "[" . LabelReplace . "](" . subLink[1] . ")"
+                  }
+               }
+               i++                                        
+         }
+         catIndex++
+      }
+   }
+
+   if (replace==1)
+      HSR_ImportString:=""
+   else
+      HSR_ImportString:="`n"
+   
+   Loop, % fullArray.MaxIndex()   ; concat string array
+   {
+      r:=A_Index
+      Loop, % fullArray[A_Index].MaxIndex()
+      {
+         HSR_ImportString .= A_Index == fullArray[r].MaxIndex() ? """" . fullArray[r,A_Index] . """" : """" . fullArray[r,A_Index] . ""","
+      }
+      if (A_Index!=fullArray.MaxIndex())
+         HSR_ImportString .= "`n"
+   }
+   ;MsgBox % HSR_ImportString
+   if (replace==1)
+      FileDelete,%repo%
+   FileAppend,%HSR_ImportString%, %repo%
+   HSRImportString:=""
+   bkmk:=""
+   bkmkLines:=[]
+   fullArray := []
+return
+
+ImportCSV:
+   replace:=0
+   search:=StrSplit(UsrIn,">",,2)
+   newCSVPath:=search[2]
+   FileRead, newCSV, %newCSVPath%
+   newCSV:="`n" . newCSV
+   FileAppend,%newCSV%, %repo%
+return
+
+LoadRepo:
+   search:=StrSplit(UsrIn,">",,2)
+   repo:=search[2]
+   IniWrite, %repo%, HS_Settings.ini, Settings, Repository
 return
 
 SetTheme:
@@ -902,6 +1056,8 @@ CheckSettings:
       newSettings:="`nGUIHotkey=#Space`nHighlightHotkey=^#Space`nJump=1"
    } else if (lastSettingArray[1]=="HighlightHotkey") {
       newSettings:="`nJump=1"
+   } else if (lastSettingArray[1]=="Jump") {
+      newSetting:="`nRepository=HSR_Master.csv"
    }
    FileAppend, %newSettings%, HS_Settings.ini
 return
@@ -944,17 +1100,18 @@ MinMode=0
 GUIHotkey=#Space
 HighlightHotkey=^#Space
 Jump=1
+Repository=HSR_Master.csv
    ), HS_Settings.ini
 return
 
 GenerateHSR:
-   FileAppend,
-   (
+      FileAppend,
+      (
 "Category Label","Link List"
 "*Quick Access","[<Quick Start Guide>](*)"
 "Quick Start Guide","[NAVIGATION REFERENCE](https://github.com/JSSatchell/HyperSearch#navigation)[Press Space to search the category index on the left]()[Tab between control windows]()[Press Enter after typing Space to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE](https://github.com/JSSatchell/HyperSearch#adding--removing-categories--links)[Edit Favorites - 'Favorite#>Label>URL'](https://github.com/JSSatchell/HyperSearch#update-favorites)[Add Index Category - 'Category Name+']()[Add link - '+Link Name+Link URL']()[Add at Position - '+Position#+Link Name+LinkURL']()[Remove Selected Link - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete-Category']()[ ]()[SETTINGS](https://github.com/JSSatchell/HyperSearch#update-the-settings)[Min/Max Mode - 'Set>Min/Max']()[Dark/Light Mode - 'Set>Dark/Light']()[Transparency - 'Set>Transparency>Percentage']()[]()[CLICK HERE for full feature list & updates](https://github.com/JSSatchell/HyperSearch)"
    ), HSR_Master.csv
-return
+   return
 
 Help:
    Run, % "https://github.com/JSSatchell/HyperSearch"
