@@ -25,7 +25,7 @@ In editor language: It's FX Console/Excalibur for the internet.
 
 HyperSearch is a minimalist bookmark managing utility that focuses on speed and distraction-free access to what you're searching for.
 
-It also provides convenient hotkeys for searching any highlighted text as well as a search bar that functions as quick-access internet search, as well as searching your saved hyperlinks.
+It provides convenient and customizable hotkeys for searching any highlighted text as well as a search bar that functions as quick-access internet search, as well as searching your saved hyperlinks.
 
 HyperSearch Lite is a streamlined version of the searchbar and favorites without the bookmark manager.
 
