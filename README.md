@@ -33,7 +33,7 @@ HyperSearch Lite is a streamlined version of the searchbar and favorites without
 
 ![image](https://user-images.githubusercontent.com/99512204/170307480-cb98fd58-2e9d-4307-b294-ebc4d7541c55.png)
 
-HyperSearch Lite is also built into HyperSearch and can be activated by typing `Set>Min`
+HyperSearch Lite is built into HyperSearch and can be activated by typing `Set>Min`
 
     Set>Min
 
