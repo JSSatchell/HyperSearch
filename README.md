@@ -201,7 +201,7 @@ To import a HyperSearch category or full HyperSearch repository, type `Import>` 
 
 When importing a .csv, all links will be added to the current repository.
 
-_NOTE: When adding new categories via .csv or .html if any imported category has the same name as an existing category, the links from the new category will not be visible._
+_NOTE: When adding new categories via .csv or .html if any imported category has the same name as an existing category, the links from the new category will not be visible. To get around this, rename the exisiting category before or after the import and the new category and its corresponding links will be revealed._
 
 [^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
 
