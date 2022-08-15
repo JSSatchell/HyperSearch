@@ -662,20 +662,22 @@ RemoveLinks:
       ;GoSub, DestroyGui
       ;return
    } else if (removeTxt[2] != "" && removeTxt[3] != "") { ; Remove list of links
-      numRemove := max(removeTxt[2],removeTxt[3])-min(removeTxt[2],removeTxt[3]) + 1
-      ;MsgBox % numRemove
       start:=min(removeTxt[2],removeTxt[3])
+      stop:=max(removeTxt[2],removeTxt[3])
+      numRemove := stop-start + 1
+      ;MsgBox % numRemove
       i:=start
       chckList := 
-      Loop, 11
+      While i <= stop
       {
          if (A_Index<=10) {
             chckList .= linkArray[i,1] . "`n"
             i++
          } else {
-            if (numRemove>10) {
+            if (A_Index>10) {
                andMore:=numRemove-10
                chckList .= "and " . andMore . " others"
+               break
             }
          }
       }
