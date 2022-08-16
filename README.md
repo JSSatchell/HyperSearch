@@ -3,6 +3,8 @@ Instant internet search, minus the distractions.
 
 In editor language: It's FX Console/Excalibur for the internet.
 
+USE THE "RELEASES" LINK ON THE RIGHT TO DOWNLOAD ––––>
+
 ### GUIDE CONTENTS
 
  - [Overview](https://github.com/JSSatchell/HyperSearch#overview)
