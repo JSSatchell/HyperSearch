@@ -886,6 +886,7 @@ return
 
 ImportChrome:
    replace:=0
+   otherChk:=0
    search:=StrSplit(UsrIn,">",,2)
    MsgBox, 3, Import options, How would you like to import?`nYes: Append to current links`nNo: Replace all links with bookmarks
    IfMsgBox, No
@@ -930,8 +931,13 @@ ImportChrome:
       numTabs := round(numTabs/4)
 
       if (head == "H3") { ; New category
-         RegExMatch(currentLine, "O)<H3 .*>(.*?)</H3>", thisCat)
-         fullArray[catIndex,1]:=thisCat[1]
+         RegExMatch(currentLine, "O)<H3 .*>(.*?)</H3>", catScan)
+         thisCat:=catScan[1]
+         if (thisCat == "Bookmarks bar") {
+            ;MsgBox, Ding
+            thisCat :=  " Bookmarks bar"
+         }
+         fullArray[catIndex,1]:=thisCat
          nxtTab:=numTabs+1
          i:=A_Index+2
          subTabs:=numTabs+1
@@ -966,19 +972,86 @@ ImportChrome:
                      RegExMatch(subLine, "O)<A HREF=""(.*?)""", subLink)
                      RegExMatch(subLine, "O)<A .*>(.*?)</A>", subLabel)
                      ;MsgBox % "Current label: " . thisLabel[1] . "`nCurrent link: " . thisLink[1]
+                     ;checkString:=subLabel[1]
                      if (subLabel[1]!="") {
-                           labelReplace := StrReplace(subLabel[1], "|", "-")
+                        GoSub, CleanLabels
                      } else {
-                           labelReplace := subLink[1]
+                        labelReplace := subLink[1]
+                     }
+                     checkLink:=subLink[1]
+                     ;MsgBox % RegExMatch(checkLink, "javascript.*")
+                     if (RegExMatch(checkLink, "javascript.*") != 0) {
+                        ;MsgBox, Ding
+                        checkLink := " "
                      }
 
-                     fullArray[catIndex,2] .= "[" . LabelReplace . "](" . subLink[1] . ")"
+                     fullArray[catIndex,2] .= "[" . labelReplace . "](" . checkLink . ")"
                   }
                }
                i++                                        
          }
          catIndex++
+      } else if (head == "A " && numTabs == 1) {
+         if (otherChk==0) {
+            fullArray[catIndex,1]:=" Other bookmarks"
+            otherChk:=1
+            otherCat:=catIndex
+         }
+         RegExMatch(currentLine, "O)<A HREF=""(.*?)""", subLink)
+         RegExMatch(currentLine, "O)<A .*>(.*?)</A>", subLabel)
+         ;MsgBox % "Current label: " . thisLabel[1] . "`nCurrent link: " . thisLink[1]
+         ;checkString:=subLabel[1]
+         if (subLabel[1]!="") {
+            GoSub, CleanLabels
+         } else {
+            labelReplace := subLink[1]
+         }
+         checkLink:=subLink[1]
+         ;MsgBox % RegExMatch(checkLink, "javascript.*")
+         if (RegExMatch(checkLink, "javascript.*") != 0) {
+            ;MsgBox, Ding
+            checkLink := " "
+         }
+
+         fullArray[otherCat,2] .= "[" . LabelReplace . "](" . checkLink . ")"
+         ;catIndex++
+         nxtTab:=1
+         i:=A_Index+1
+         subTabs:=numTabs+1
+         while  subTabs > numTabs ;&& i != bkmkLines.maxIndex()
+         {
+            ;MsgBox % "Loop start`n" . subTabs . " > " . numTabs . "`n" . currentLine
+            subLine:=bkmkLines[i]
+            ;MsgBox % subLine
+            subTabs:=0
+            subCharPos:=6
+            ;MsgBox % subLine
+            Loop, Parse, subLine
+            {
+               if (A_LoopField == A_Space) {
+                  subTabs++
+                  subCharPos++
+               } else 
+                  break
+            }
+            subTabs := round(subTabs/4)
+            ;MsgBox % subLine . " : " . subTabs
+            subHead:=SubStr(subLine,subCharPos,2)
+            ;MsgBox % subTabs . " = " . nxtTab . "`n" . subLine . "`n" . currentLine
+            if (subTabs == nxtTab) {
+               ;MsgBox % subHead
+               if (subHead=="H3") {
+                  ;MsgBox % subTabs . " : " . nxtTab
+                  RegExMatch(subLine, "O)<H3 .*>(.*?)</H3>", subCat)
+                  ;MsgBox % thisCat[1] . " : " . numTabs . "`n" . subCat[1] . " : " . subTabs
+                  fullArray[otherCat,2] .= "[<" . subCat[1] . ">](*)"
+               }
+            }
+            i++
+         }
+         catIndex++
       }
+      
    }
 
    if (replace==1)
@@ -1004,6 +1077,21 @@ ImportChrome:
    bkmk:=""
    bkmkLines:=[]
    fullArray := []
+return
+
+CleanLabels:
+   labelReplace := StrReplace(subLabel[1], "|", "-")
+   labelReplace := StrReplace(labelReplace, ")", "-")
+   labelReplace := StrReplace(labelReplace, "(", "-")
+   labelReplace := StrReplace(labelReplace, "[", "-")
+   labelReplace := StrReplace(labelReplace, "]", "-")
+   labelReplace := StrReplace(labelReplace, "`%5C", "\")
+   labelReplace := StrReplace(labelReplace, "+", A_Space)
+   labelReplace := StrReplace(labelReplace, "`%25", "`%")
+   labelReplace := StrReplace(labelReplace, "&amp;", "&")
+   labelReplace := StrReplace(labelReplace, "&gt;", ">")
+   labelReplace := StrReplace(labelReplace, "&#39;", "``")
+   labelReplace := StrReplace(labelReplace, "&#150;", "-")
 return
 
 ImportCSV:
