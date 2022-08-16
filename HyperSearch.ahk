@@ -245,7 +245,8 @@ BuildHSRArray:
       Loop, Parse, A_LoopField, CSV
       {
          c:=A_Index ; Column number
-         if (A_Index==1 && r>1) ; Only search first column
+         ;if (A_Index==1 && r>1)
+         if (A_Index==1) ; Only search first column
          {
             chck:=A_LoopField . "|"
             dup := InStr(indexList,chck) ; Detect duplicates
@@ -256,7 +257,7 @@ BuildHSRArray:
          }
          HSR_Array[r,c]:=A_LoopField
       }
-      indexIndex++
+      ;indexIndex++
    }
 return
 
@@ -799,7 +800,7 @@ EditSettings:
    } else if (search[2] ~= "i)max") {
       IniWrite, 0, HS_Settings.ini, Settings, MinMode
    } else if (search[2] ~= "i)j.mp") {
-      if (search[3]~="i)on"){
+      if (search[3]~="i)on") {
          IniWrite, 1, HS_Settings.ini, Settings, jump
          IniRead, jump, HS_Settings.ini, Settings, jump
       } else if (search[3]~="i)off") {
@@ -904,16 +905,9 @@ ImportChrome:
    }
    ;MsgBox % bkmk
    fullArray := []
-
-   if (replace==1)
-   {
-      fullArray[1,1]:="Category Name"
-      fullArray[1,2]:="Links List"
-   }
-
    catIndex:=2
 
-   Loop % bkmkLines.maxIndex()
+   Loop % bkmkLines.maxIndex() ; Add check for duplicate categories
    {
       numTabs:=0
       charPos:=6
@@ -1147,7 +1141,7 @@ CheckSettings:
    } else if (lastSettingArray[1]=="HighlightHotkey") {
       newSettings:="`nJump=1"
    } else if (lastSettingArray[1]=="Jump") {
-      newSetting:="`nRepository=HSR_Master.csv"
+      newSettings:="`nRepository=HSR_Master.csv"
    }
    FileAppend, %newSettings%, HS_Settings.ini
 return
@@ -1197,7 +1191,6 @@ return
 GenerateHSR:
       FileAppend,
       (
-"Category Label","Link List"
 " Quick Access","[<Quick Start Guide>](*)"
 "Quick Start Guide","[NAVIGATION REFERENCE](https://github.com/JSSatchell/HyperSearch#navigation)[Press Space to search the category index on the left]()[Tab between control windows]()[Press Enter after typing Space to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE](https://github.com/JSSatchell/HyperSearch#adding--removing-categories--links)[Edit Favorites - 'Favorite#>Label>URL'](https://github.com/JSSatchell/HyperSearch#update-favorites)[Add Index Category - 'Category Name+']()[Add link - '+Link Name+Link URL']()[Add at Position - '+Position#+Link Name+LinkURL']()[Remove Selected Link - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete-Category']()[ ]()[SETTINGS](https://github.com/JSSatchell/HyperSearch#update-the-settings)[Min/Max Mode - 'Set>Min/Max']()[Dark/Light Mode - 'Set>Dark/Light']()[Transparency - 'Set>Opacity>Percentage']()[]()[CLICK HERE for full feature list & updates](https://github.com/JSSatchell/HyperSearch)"
    ), HSR_Master.csv
