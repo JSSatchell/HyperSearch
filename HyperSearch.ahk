@@ -550,6 +550,7 @@ AppendLinks:
    ; Sample: 1Category+2LinkIndex+3LinkName+4URL
    linkTxt:=StrSplit(UsrIn,"+",,4)
    linkIndex:=linkTxt[2]
+   ;linkMax:=linkTxt.MaxIndex()
    ;MsgBox % indexLabel . "`n" . linkIndex . "`n" . linkName . "`n" . linkURL
    if (linkTxt[1] != "") { ; Add new category
       Loop % HSR_Array.MaxIndex()
@@ -579,10 +580,14 @@ AppendLinks:
                break
             }
          }
-      } else { ; Add category with blank first entry
+      } else if (SubStr(UsrIn,0) == "+") { ; Add category with blank first entry
          appendTxt:="`n""" . linkTxt[1] . """," . """[ ]()"""
          FileAppend, %appendTxt%, %repo%
          ;return
+      } else {
+         searchQuery = %UsrIn%
+         GoSub, GoogleSearch
+         return
       }
       mouseKeep:=1
       newCat:=linkTxt[1]
@@ -889,15 +894,19 @@ ImportChrome:
    replace:=0
    otherChk:=0
    search:=StrSplit(UsrIn,">",,2)
+   bkmkLines:=[]
+   ;MsgBox % "Link: " . search[2]
+   bkmkPath:=search[2]
+   FileRead, bkmk, %bkmkPath%
+   if (ErrorLevel == 1) {
+      Msgbox % "File could not be read."
+      return
+   }
    MsgBox, 3, Import options, How would you like to import?`nYes: Append to current links`nNo: Replace all links with bookmarks
    IfMsgBox, No
       replace:=1
    IfMsgBox, Cancel
       return
-   bkmkLines:=[]
-   ;MsgBox % "Link: " . search[2]
-   bkmkPath:=search[2]
-   FileRead, bkmk, %bkmkPath%
    Loop, Parse, bkmk, `n, `r ; Build HSR_Array
    {
       ;MsgBox, % A_LoopField
@@ -930,6 +939,17 @@ ImportChrome:
          if (thisCat == "Bookmarks bar") {
             ;MsgBox, Ding
             thisCat :=  " Bookmarks bar"
+         }
+         Loop % HSR_Array.MaxIndex()
+         {
+            ;match := InStr(index,HSR_Array[A_Index,1])
+            ;MsgBox % HSR_Array[A_Index,1] . "`n" . index
+            if (thisCat = HSR_Array[A_Index,1]) {
+               ogCat := thisCat
+               thisCat.="_1"
+               ;MsgBox % "Category " . ogCat . " already exists.`nThe category will be added as " . thisCat . "."
+               ;return
+            }
          }
          fullArray[catIndex,1]:=thisCat
          nxtTab:=numTabs+1
@@ -1075,10 +1095,10 @@ return
 
 CleanLabels:
    labelReplace := StrReplace(subLabel[1], "|", "-")
-   labelReplace := StrReplace(labelReplace, ")", "-")
-   labelReplace := StrReplace(labelReplace, "(", "-")
-   labelReplace := StrReplace(labelReplace, "[", "-")
-   labelReplace := StrReplace(labelReplace, "]", "-")
+   labelReplace := StrReplace(labelReplace, ")", "}")
+   labelReplace := StrReplace(labelReplace, "(", "{")
+   labelReplace := StrReplace(labelReplace, "[", "{")
+   labelReplace := StrReplace(labelReplace, "]", "}")
    labelReplace := StrReplace(labelReplace, "`%5C", "\")
    labelReplace := StrReplace(labelReplace, "+", A_Space)
    labelReplace := StrReplace(labelReplace, "`%25", "`%")
