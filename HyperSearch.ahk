@@ -435,6 +435,9 @@ ButtonSubmit:
          } else if (UsrIn ~= "i)^export>cat.{0,5}") {
             GoSub, ExportCat
             GoSub, DestroyGui
+         } else if (UsrIn ~= "i)^export>repo.{0,6}") {
+            GoSub, ExportRepo
+            GoSub, DestroyGui
          } else if (UsrIn ~= ".*\+.*"){
             GuiControl, -redraw, Link
             GoSub, AppendLinks
@@ -765,7 +768,53 @@ ExportCat:
          addLink .= "`n"
    }
    ;MsgBox % index . "`n" . addLink
-   FileAppend, %addLink%, %index%.csv
+   newFile := index . ".csv"
+   If FileExist(newFile) {
+      FileDelete, %newFile%
+   }
+   FileAppend, %addLink%, %newFile%
+return
+
+ExportRepo:
+   Gui, Submit, noHide
+   exportCell=
+   repoTrim := SubStr(repo,1,-4)
+   exportFile := repoTrim . "_Export.csv"
+   If FileExist(exportFile) {
+      FileDelete, %exportFile%
+   }
+   Loop % HSR_Array.MaxIndex()
+   {
+      exportArray := []
+      exportCell := HSR_Array[A_Index,2]
+      exportCat := HSR_Array[A_Index,1]
+      exportCat := Trim(exportCat)
+      exportCat := StrReplace(exportCat, ",", "")
+      newPos:=1
+      labelExportIndex:=1
+      while (RegExMatch(exportCell, "O)\[(.*?)]", currentExportLabel, StartingPos := newPos) != 0) {
+         newPos+=2
+         RegExMatch(exportCell, "O)\((.*?)\)", currentExportLink, StartingPos := newPos)
+         if (currentExportLink[1] != "*" && currentExportLink[1] != "" && currentExportLink[1] != " ") {
+            expLink := currentExportLink[1]
+            expLabel := currentExportLabel[1]
+            expLabel := Trim(expLabel)
+            expLink := Trim(expLink)
+            expLabel := StrReplace(expLabel, ",", A_Space)
+            expLink := StrReplace(expLink, ",", A_Space)
+            exportArray[labelExportIndex,1]:=expLabel
+            exportArray[labelExportIndex,2]:=expLink
+         }
+         newPos := currentExportLink.Pos(1)
+         labelExportIndex++
+      }
+      Loop % exportArray.MaxIndex() {
+         if (exportArray[A_Index,1] != "" && exportArray[A_Index,1] != " ")
+            exportLinks .= exportCat . "," . exportArray[A_Index,1] . "," . exportArray[A_Index,2] . "`n"
+      }
+      ;MsgBox % index . "`n" . addLink
+   }
+   FileAppend, %exportLinks%, %exportFile%
 return
 
 FavButtonClick:
