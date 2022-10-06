@@ -216,7 +216,7 @@ To export a HyperSearch category as a more accessible CSV of link labels and hyp
 
 A new .csv file with the name of the active category will be created.
 
-_NOTE: At the moment, the resulting CSV file cannot be imported via the **Import CSV** function listed above. Also, if a .csv file with the name of the current category already exists, the links will be added to the end of that file._
+_NOTE: At the moment, the resulting CSV file cannot be imported via the **Import CSV** function listed above._
 
 [^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
 
