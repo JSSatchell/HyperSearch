@@ -214,7 +214,7 @@ _NOTE: When adding new categories via .csv or .html if any imported category has
 
 To export a HyperSearch category as a more accessible CSV of link labels and hyperlinks, type `Export>Category`
 
-A new .csv file with the name of the active category will be created.
+A new .csv file with the name of the active category will be created in the same folder as the HyperSearch executable.
 
 _NOTE: At the moment, the resulting CSV file cannot be imported via the **Import CSV** function listed above._
 
