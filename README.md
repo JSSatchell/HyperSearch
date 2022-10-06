@@ -15,6 +15,7 @@ In editor language: It's FX Console/Excalibur for the internet.
  - [Crosslinking](https://github.com/JSSatchell/HyperSearch#crosslinking)
  - [Update Favorites](https://github.com/JSSatchell/HyperSearch#update-favorites)
  - [Load & Import](https://github.com/JSSatchell/HyperSearch#load--import)
+ - [Export](https://github.com/JSSatchell/HyperSearch#export)
  - [Update the Settings](https://github.com/JSSatchell/HyperSearch#update-the-settings)
 
 ---
@@ -204,6 +205,18 @@ To import a HyperSearch category or full HyperSearch repository, type `Import>` 
 When importing a .csv, all links will be added to the current repository.
 
 _NOTE: When adding new categories via .csv or .html if any imported category has the same name as an existing category, the links from the new category will not be visible. To get around this, rename the exisiting category before or after the import and the new category and its corresponding links will be revealed._
+
+[^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
+
+---
+
+#### Export
+
+To export a HyperSearch category as a more accessible CSV of link labels and hyperlinks, type `Export>Category`
+
+A new .csv file with the name of the active category will be created.
+
+_NOTE: At the moment, the resulting CSV file cannot be imported via the **Import CSV** function listed above. Also, if a .csv file with the name of the current category already exists, the links will be added to the end of that file._
 
 [^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
 
