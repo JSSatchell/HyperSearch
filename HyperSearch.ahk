@@ -11,10 +11,10 @@ CoordMode, Mouse ; , Screen
 
 ;;;;;USE DEFAULT BROWSER;;;;;
 RegRead, ProgID, HKEY_CURRENT_USER, Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice, Progid
-Browser := "iexplore.exe"
+Browser := "msedge.exe"
 if (ProgID = "ChromeHTML")
    Browser := "chrome.exe"
-if (ProgID = "FirefoxURL")
+if (ProgID ~= "FirefoxURL.*")
    Browser := "firefox.exe"
 if (ProgID = "BraveHTML")
    Browser := "brave.exe"
@@ -432,6 +432,9 @@ ButtonSubmit:
             GoSub, LoadRepo
             GoSub, DestroyGui
             GoSub, LoadGui
+         } else if (UsrIn ~= "i)^export>cat.{0,5}") {
+            GoSub, ExportCat
+            GoSub, DestroyGui
          } else if (UsrIn ~= ".*\+.*"){
             GuiControl, -redraw, Link
             GoSub, AppendLinks
@@ -751,6 +754,18 @@ UpdateLinkList:
    }
 
    GoSub, SaveHSR
+return
+
+ExportCat:
+   Gui, Submit, noHide
+   Loop % linkArray.MaxIndex() {
+      if (linkArray[A_Index,1] != "" && linkArray[A_Index,1] != " ")
+         addLink .= linkArray[A_Index,1] . "," . linkArray[A_Index,2] . "`n"
+      else
+         addLink .= "`n"
+   }
+   ;MsgBox % index . "`n" . addLink
+   FileAppend, %addLink%, %index%.csv
 return
 
 FavButtonClick:
