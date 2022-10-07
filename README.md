@@ -212,11 +212,13 @@ _NOTE: When adding new categories via .csv or .html if any imported category has
 
 #### Export
 
-To export a HyperSearch category as a more accessible CSV of link labels and hyperlinks, type `Export>Category`
+To export the current HyperSearch repository as a more accessible CSV of link labels and hyperlinks, type `Export>Repository`
 
-A new .csv file with the name of the active category will be created in the same folder as the HyperSearch executable.
+To export only the active category, type `Export>Category`
 
-_NOTE: At the moment, the resulting CSV file cannot be imported via the **Import CSV** function listed above._
+A new .csv file with the name of either the current repository or the active category will be created in the same folder as the HyperSearch executable.
+
+_NOTE: At the moment, the resulting CSV file from repository or category exports cannot be imported via the **Import CSV** function listed above._
 
 [^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
 
