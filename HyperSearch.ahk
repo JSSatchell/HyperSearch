@@ -432,6 +432,10 @@ ButtonSubmit:
             GoSub, LoadRepo
             GoSub, DestroyGui
             GoSub, LoadGui
+         } else if (UsrIn ~= "i)^export>cat.{0,5}>h.{0,4}s.{0,5}") {
+            GoSub, ShareCat
+            GoSub, DestroyGui
+            GoSub, openSource
          } else if (UsrIn ~= "i)^export>cat.{0,5}") {
             GoSub, ExportCat
             GoSub, DestroyGui
@@ -494,7 +498,7 @@ LoadMenu:
    }
    Menu, Exit, Add, Close Window, DestroyGui
    Menu, Exit, Add, Exit App, ExitApp
-   Menu, Help, Add, Check for update, openGit
+   Menu, Help, Add, Support and updates, openGit
    Menu, Help, Add, Open source folder, openSource
    Menu, MainMenu, Add, [&?], :Help, +right
    Menu, MainMenu, Add, [&X], :Exit, +right
@@ -765,6 +769,7 @@ return
 
 ExportCat:
    Gui, Submit, noHide
+   addLink=
    Loop % linkArray.MaxIndex() {
       if (linkArray[A_Index,1] != "" && linkArray[A_Index,1] != " ")
          addLink .= linkArray[A_Index,1] . "," . linkArray[A_Index,2] . "`n"
@@ -773,11 +778,32 @@ ExportCat:
    }
    ;MsgBox % index . "`n" . addLink
    FormatTime, todayQuick,, yyMMdd
-   newFile := index . "_" . todayQuick . ".csv"
+   newFile := Trim(index) . "_" . todayQuick . ".csv"
    If FileExist(newFile) {
       FileDelete, %newFile%
    }
    FileAppend, %addLink%, %newFile%
+return
+
+ShareCat:
+   Gui, Submit, noHide
+   shareCell=
+   Loop % HSR_Array.MaxIndex()
+   {
+      ;match := InStr(index,HSR_Array[A_Index,1])
+      ;MsgBox % HSR_Array[A_Index,1] . "`n" . index
+      if (index==HSR_Array[A_Index,1]) {
+         shareCell .= HSR_Array[A_Index,2]
+         ;MsgBox % HSR_Array[A_Index,1] . "`n" . index
+         break
+      }
+   }
+   shareLinks := index . "," . shareCell
+   newShareFile := Trim(index) . ".csv"
+   If FileExist(newShareFile) {
+      FileDelete, %newShareFile%
+   }
+   FileAppend, %shareLinks%, %newShareFile%
 return
 
 ExportRepo:
@@ -1293,6 +1319,7 @@ return
 
 openSource:
    Run % A_WorkingDir
+   GoSub, DestroyGui
 return
 
 DestroyGui:
