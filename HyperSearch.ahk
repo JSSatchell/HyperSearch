@@ -435,9 +435,11 @@ ButtonSubmit:
          } else if (UsrIn ~= "i)^export>cat.{0,5}") {
             GoSub, ExportCat
             GoSub, DestroyGui
+            GoSub, openSource
          } else if (UsrIn ~= "i)^export>repo.{0,6}") {
             GoSub, ExportRepo
             GoSub, DestroyGui
+            GoSub, openSource
          } else if (UsrIn ~= ".*\+.*"){
             GuiControl, -redraw, Link
             GoSub, AppendLinks
@@ -492,7 +494,9 @@ LoadMenu:
    }
    Menu, Exit, Add, Close Window, DestroyGui
    Menu, Exit, Add, Exit App, ExitApp
-   Menu, MainMenu, Add, [&?], Help, +right
+   Menu, Help, Add, Check for update, openGit
+   Menu, Help, Add, Open source folder, openSource
+   Menu, MainMenu, Add, [&?], :Help, +right
    Menu, MainMenu, Add, [&X], :Exit, +right
    Gui, Menu, MainMenu
 return
@@ -768,7 +772,8 @@ ExportCat:
          addLink .= "`n"
    }
    ;MsgBox % index . "`n" . addLink
-   newFile := index . ".csv"
+   FormatTime, todayQuick,, yyMMdd
+   newFile := index . "_" . todayQuick . ".csv"
    If FileExist(newFile) {
       FileDelete, %newFile%
    }
@@ -779,7 +784,8 @@ ExportRepo:
    Gui, Submit, noHide
    exportCell=
    repoTrim := SubStr(repo,1,-4)
-   exportFile := repoTrim . "_Export.csv"
+   FormatTime, todayQuick,, yyMMdd
+   exportFile := repoTrim . "_Export_" . todayQuick . ".csv"
    If FileExist(exportFile) {
       FileDelete, %exportFile%
    }
@@ -1280,9 +1286,13 @@ GenerateHSR:
    ), HSR_Master.csv
    return
 
-Help:
+openGit:
    Run, % "https://github.com/JSSatchell/HyperSearch"
    GoSub, DestroyGui
+return
+
+openSource:
+   Run % A_WorkingDir
 return
 
 DestroyGui:
