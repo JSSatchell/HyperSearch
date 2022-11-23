@@ -81,7 +81,7 @@ return
 return
 
 !e::
-   send, {enter}
+   goSub, ButtonSubmit
 return
 
 !q::
@@ -398,9 +398,9 @@ ButtonSubmit:
          searchQuery := linkArray[Link,2]
          GoSub, GoogleSearch
       }
-   } if (activeControl == "ListBox1") {
+   } else if (activeControl == "ListBox1") {
       GuiControl, focus, Link
-   } else {
+   } else if (activeControl == "Edit1" || activeControl == "Button1") {
       if (UsrIn != ""){
          if (UsrIn ~= "^ .*"){
             GuiControl, focus, Link
@@ -741,9 +741,28 @@ ReorderLinks:
       swapTxt:=StrSplit(UsrIn,"`%",,2)
    linkString=
    swap:=[]
-   swap:=linkArray[swapTxt[1]]
-   linkArray.RemoveAt(swapTxt[1])
-   linkArray.InsertAt(swapTxt[2],[swap[1],swap[2]])
+   if (instr(swapTxt[1],"-")) {
+      swapVal:=StrSplit(swapTxt[1],"-",,2)
+      frst:=min(swapVal[1],swapVal[2])
+      lst:=max(swapVal[1],swapVal[2])
+      amt:=lst-frst+1
+      i:=1
+      while i<=amt
+      {
+         swapPos:=(frst-1)+i
+         swap.InsertAt(1,linkArray[swapPos])
+         i++
+      }
+      linkArray.RemoveAt(frst,amt)
+      Loop % swap.MaxIndex()
+      {
+         linkArray.InsertAt(swapTxt[2],[swap[A_Index,1],swap[A_Index,2]])   
+      }
+   } else {
+      swap:=linkArray[swapTxt[1]]
+      linkArray.RemoveAt(swapTxt[1])
+      linkArray.InsertAt(swapTxt[2],[swap[1],swap[2]])
+   }
    GoSub, UpdateLinkList
 return
 
