@@ -580,7 +580,9 @@ AppendLinks:
       ;MsgBox % SubStr(UsrIn,-1)
       
       if (linkTxt[2] != "" && linkTxt[3] != "") { ; Add first link
-         appendTxt:="`n""" . linkTxt[1] . """," . """[" . linkTxt[2] . "](" . linkTxt[3] . ")"""
+         uncleanLabel := linkTxt[2]
+         GoSub, CleanLabels
+         appendTxt:="`n""" . linkTxt[1] . """," . """[" . cleanLabel . "](" . linkTxt[3] . ")"""
          FileAppend, %appendTxt%, %repo%
          ;return
       } else if (SubStr(UsrIn,-1) == "++") { ; Rename current category
@@ -611,11 +613,15 @@ AppendLinks:
       mouseKeep:=0
       return
    } else if (linkIndex == "v") {
-      linkArray.push([linkTxt[3],linkTxt[4]]) ; Add link in last position
+      uncleanLabel := linkTxt[3]
+      GoSub, CleanLabels
+      linkArray.push([cleanLabel,linkTxt[4]]) ; Add link in last position
    } else if linkIndex is integer ; Position specific Link
    {
       if (linkTxt[3] != "" && linkTxt[4] != "") {
-         linkArray.InsertAt(linkTxt[2],[linkTxt[3],linkTxt[4]]) ; Insert at position
+         uncleanLabel := linkTxt[3]
+         GoSub, CleanLabels
+         linkArray.InsertAt(linkTxt[2],[cleanLabel,linkTxt[4]]) ; Insert at position
       } else if (linkTxt[3] == "") {
          if (linkTxt[4]=="") {
             linkArray.InsertAt(linkTxt[2],[linkTxt[3],linkTxt[4]]) 
@@ -627,19 +633,25 @@ AppendLinks:
       ;} else if (linkTxt[4] == "" && SubStr(UsrIn,0) == "+") {
       } else if (linkTxt[4] == "") {
          oldLabel:=linkArray[linkTxt[2],1]
-         linkArray[linkTxt[2],1]:=linkTxt[3] ; Update label at position
+         uncleanLabel := linkTxt[3]
+         GoSub, CleanLabels
+         linkArray[linkTxt[2],1]:=cleanLabel ; Update label at position
          MsgBox % oldLabel . " is now labelled " . linkArray[linkTxt[2],1]
       }
    } else { ; Unspecified position number
       if (linkTxt[2] != "" && linkTxt[3] != "") {
-         linkArray.InsertAt(1,[linkTxt[2],linkTxt[3]]) ; Insert in first position
+         uncleanLabel := linkTxt[2]
+         GoSub, CleanLabels
+         linkArray.InsertAt(1,[cleanLabel,linkTxt[3]]) ; Insert in first position
       } else if (linkTxt[2] == "") {
          linkArray[Link,2]:=linkTxt[3] ; Update URL of current
          MsgBox % linkArray[Link,1] . " now links to " . linkArray[Link,2]
       ;} else if (linkTxt[3] == "" && SubStr(UsrIn,0) == "+") {
       } else if (linkTxt[3] == "") {
          oldLabel:=linkArray[Link,1]
-         linkArray[Link,1]:=linkTxt[2] ; Update label of current
+         uncleanLabel := linkTxt[2]
+         GoSub, CleanLabels
+         linkArray[Link,1]:=cleanLabel ; Update label of current
          MsgBox % oldLabel . " is now labelled " . linkArray[Link,1]
       }
    }
@@ -741,7 +753,7 @@ ReorderLinks:
       swapTxt:=StrSplit(UsrIn,"`%",,2)
    linkString=
    swap:=[]
-   if (instr(swapTxt[1],"-")) {
+   if (instr(swapTxt[1],"-")) { ;;;;; MULTIPLE LINKS
       swapVal:=StrSplit(swapTxt[1],"-",,2)
       frst:=min(swapVal[1],swapVal[2])
       lst:=max(swapVal[1],swapVal[2])
@@ -758,7 +770,7 @@ ReorderLinks:
       {
          linkArray.InsertAt(swapTxt[2],[swap[A_Index,1],swap[A_Index,2]])   
       }
-   } else {
+   } else {     ;;;;; SINGLE LINK
       swap:=linkArray[swapTxt[1]]
       linkArray.RemoveAt(swapTxt[1])
       linkArray.InsertAt(swapTxt[2],[swap[1],swap[2]])
@@ -1103,6 +1115,7 @@ ImportChrome:
                      ;MsgBox % "Current label: " . thisLabel[1] . "`nCurrent link: " . thisLink[1]
                      ;checkString:=subLabel[1]
                      if (subLabel[1]!="") {
+                        uncleanLabel := subLabel[1]
                         GoSub, CleanLabels
                      } else {
                         labelReplace := subLink[1]
@@ -1131,6 +1144,7 @@ ImportChrome:
          ;MsgBox % "Current label: " . thisLabel[1] . "`nCurrent link: " . thisLink[1]
          ;checkString:=subLabel[1]
          if (subLabel[1]!="") {
+            uncleanLabel := subLabel[1]
             GoSub, CleanLabels
          } else {
             labelReplace := subLink[1]
@@ -1209,7 +1223,8 @@ ImportChrome:
 return
 
 CleanLabels:
-   labelReplace := StrReplace(subLabel[1], "|", "-")
+   cleanLabel :=
+   labelReplace := StrReplace(uncleanLabel, "|", "-")
    labelReplace := StrReplace(labelReplace, ")", "}")
    labelReplace := StrReplace(labelReplace, "(", "{")
    labelReplace := StrReplace(labelReplace, "[", "{")
@@ -1221,6 +1236,8 @@ CleanLabels:
    labelReplace := StrReplace(labelReplace, "&gt;", ">")
    labelReplace := StrReplace(labelReplace, "&#39;", "``")
    labelReplace := StrReplace(labelReplace, "&#150;", "-")
+   cleanLabel := labelReplace
+   uncleanLabel:=
 return
 
 ImportCSV:
