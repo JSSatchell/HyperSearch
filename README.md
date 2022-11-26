@@ -48,7 +48,7 @@ HyperSearch Lite is built into HyperSearch and can be activated by typing `Set>M
 
 Open the GUI with `Win`+`Space` or search any highlighted text with `Ctrl`+`Win`+`Space`. (These hotkeys can be reconfigured to user preference.)
 
-Close the GUI with Escape or `Close Window` from the `X` menu.
+Close the GUI with `Escape` or `Close Window` from the `X` menu.
 
 The app will stay open in the system tray unless closed from the tray or via `Exit App` from the `X` menu.
 
