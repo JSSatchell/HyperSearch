@@ -1,7 +1,7 @@
 # HyperSearch
 Instant internet search, minus the distractions.
 
-In editor language: It's FX Console/Excalibur for the internet.
+In video editor language: It's FX Console/Excalibur for the internet.
 
 ### [DOWNLOAD](https://github.com/JSSatchell/HyperSearch/releases)  |  [QUICK START VIDEO](https://youtu.be/1HC9vhA5meY)
 
