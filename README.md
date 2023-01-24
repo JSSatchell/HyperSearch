@@ -1,7 +1,7 @@
 # HyperSearch
 Instant internet search, minus the distractions.
 
-In video editor language: It's FX Console/Excalibur for the internet.
+In video editor language: It's [FX Console](https://www.videocopilot.net/tutorials/fx_console_plugin/?vc=true)/[Excalibur](https://knightsoftheeditingtable.com/excalibur) for the internet.
 
 ### [DOWNLOAD](https://github.com/JSSatchell/HyperSearch/releases)  |  [QUICK START VIDEO](https://youtu.be/1HC9vhA5meY)
 
@@ -78,7 +78,7 @@ If one of the listboxes is active, `Alt`+`W` and `Alt`+`S` will toggle the slect
 
 If the search bar is active, `Alt` + `S` will activate the links window and start cycling down through the links.
 
-Also with the search bar active, `Alt` + `Q` will highlight all the current text so a new search can be started more quickly.
+Also with the search bar active, `Alt` + `Q` will clear all of the current text so a new search can be started more quickly.
 
 [^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
 
@@ -107,6 +107,10 @@ To add a link at the bottom of the links list, substitute `v` for the position v
 To move a link to a new position, type the starting position of the link, followed by `~` and the new positon of the link
 
     1~5
+
+To move a range of links to a new position, type the first position of the range followed by `-` and the last number of the range, followed by `~` and the new starting positon of the link range
+
+    1-3~5
 
 To remove the current link, type `Delete-` and select `Yes` on the prompt
 
