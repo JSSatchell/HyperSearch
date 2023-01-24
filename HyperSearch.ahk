@@ -87,7 +87,8 @@ return
 !q::
    GuiControlGet, currentControl, Focus
    if (currentControl=="Edit1") {
-      send, +{home}
+      send, ^a
+      send, {backspace}
    }
 return
 
