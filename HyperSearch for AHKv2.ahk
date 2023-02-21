@@ -153,12 +153,13 @@ LoadGUI(*)
 { 
    DestroyGUI()
    minMode := IniRead("HS_Settings.ini", "Settings", "MinMode")
+   global currentGui := minMode = 1 ? "LiteGui" : "MainGui"
    if (minMode == 1) { ; Activate minimal UI
       BuildLiteGUI()
    } else { ; Activate main UI
       BuildMainGUI()
    }
-   %CurrentGui%.OnEvent("Close", destroyGui)
+   %currentGui%.OnEvent("Close", destroyGui)
    %currentGui%.OnEvent("Escape", destroyGui)
 
 }
@@ -199,20 +200,22 @@ BuildLiteGUI(*)
    w:=310
    finalXY := SetMonitorBounds(h, w)
    LiteGui.Show("x" finalXY[1] " y" finalXY[2] " h" h " w" w)
-   index:=lastIndex
+   ;index:=lastIndex
 }
 
 BuildMainGUI(*)
 {
    LoadMenu()
    LocalHotkeysOn()
+   global lastIndex
+   global lastLinkIndex
    ;indexIndex:=0
    ;MsgBox HSR_String
    global MainGui := Gui("-Caption +ToolWindow -SysMenu","HyperSearch")
    SetTheme()
    global editBar := MainGui.Add("Edit", "r1 vUsrIn x160 y10 w220 h30 Background" controlColor " " guiFont)
-   global catListbox := MainGui.Add("ListBox", "vIndex x10 y10 w140 h315 0x100 VScroll Choose" lastIndex " sort -AltSubmit Background" controlColor " " guiFont)
-   global linksListbox := MainGui.Add("ListBox", "vLink x160 y45 w280 h280 0x100 Choose1 AltSubmit Background" controlColor " " guiFont)
+   global catListbox := MainGui.Add("ListBox", "vIndex x10 y10 w140 h315 0x100 VScroll sort -AltSubmit Background" controlColor " " guiFont)
+   global linksListbox := MainGui.Add("ListBox", "vLink x160 y45 w280 h280 0x100 AltSubmit Background" controlColor " " guiFont)
    global submitButton := MainGui.Add("Button", "Default x390 y10 w50 h20 -Tabstop", "Submit")
    global urlTextGui := MainGui.Add("Text", "x10 y330 w430 " urlTxtColor, urlDisplay)
    MainGui.MenuBar := MainMenu
@@ -225,10 +228,11 @@ BuildMainGUI(*)
    ; Generated Using SmartGUI Creator 4.0
    h:=350
    w:=450
-
    finalXY := SetMonitorBounds(h, w)
    MainGui.Show("h" h " w" w " x" finalXY[1] " y" finalXY[2])
    ControlChooseIndex lastIndex, catListbox
+   linksListbox.Choose(lastLinkIndex)
+   SetLinkHighlight()
 }
 
 SetMonitorBounds(guiH, guiW)
@@ -449,7 +453,7 @@ ButtonSubmit(*)
    ;MsgBox "Ding"
    ;GuiControlGet, activeControl, Focus
    activeControl := %currentGui%.FocusedCtrl
-   if (activeControl == linksListbox) {
+   if (minMode == 0 && activeControl == linksListbox) {
       ;MsgBox "DING"
       if (linkArray[linksListbox.value][2] == "*") {
          linkLabel:=linkArray[linksListbox.value][1]
@@ -466,7 +470,7 @@ ButtonSubmit(*)
          ;searchQuery := linkArray[Link,2]
          GoogleSearch(linkArray[linksListbox.value][2])
       }
-   } else if (activeControl == catListbox) {
+   } else if (minMode ==0 && activeControl == catListbox) {
       linksListbox.Focus()
    } else if (activeControl == editBar || activeControl == submitButton) {
       if (lastSub.UsrIn != ""){
@@ -480,7 +484,7 @@ ButtonSubmit(*)
             mouseKeep:=0
          } else if (lastSub.UsrIn ~= "i)^set>.*"){
             mouseKeep:=1
-            setMax:=0
+            ;setMax:=0
             EditSettings()
             DestroyGui()
             LoadGUI()
@@ -1040,8 +1044,8 @@ EditSettings(*)
    } else if (search[2] ~= "i)light") {
       IniWrite 0, "HS_Settings.ini", "Settings", "DkMd"
    } else if (search[2] ~= "i)min") {
-      MsgBox "Under construction..."
-      ;IniWrite 1, "HS_Settings.ini", "Settings", "MinMode"
+      ;MsgBox "Under construction..."
+      IniWrite 1, "HS_Settings.ini", "Settings", "MinMode"
    } else if (search[2] ~= "i)max") {
       IniWrite 0, "HS_Settings.ini", "Settings", "MinMode"
    } else if (search[2] ~= "i)j.mp") {
@@ -1516,16 +1520,19 @@ openSource(*)
 
 DestroyGui(*) {
    LocalHotkeysOff()
+   ;global lastIndex
    try {
       global lastIndex := catListbox.value
    } catch {
-      lastIndex := 1
+      ;lastIndex := 1
    }
+   ;/*
    try {
-      global lastLinksIndex := linksListbox.value
+      global lastLinkIndex := linksListbox.value
    } catch {
-      lastLinksIndex := 1
+      ;lastLinkIndex := 1
    }
+   ;*/
    HSR_String:=""
    HSR_Array:=""
    linkArray:=""
