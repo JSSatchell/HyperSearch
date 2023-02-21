@@ -453,106 +453,115 @@ ButtonSubmit(*)
    ;MsgBox "Ding"
    ;GuiControlGet, activeControl, Focus
    activeControl := %currentGui%.FocusedCtrl
-   if (minMode == 0 && activeControl == linksListbox) {
-      ;MsgBox "DING"
-      if (linkArray[linksListbox.value][2] == "*") {
-         linkLabel:=linkArray[linksListbox.value][1]
-         RegExMatch(linkLabel, "<(.*?)>", &match)
-         ;GuiControl, ChooseString, index, % "|" . match[1]
-         ;catListbox.Choose(match[1])
-         try {
-            ControlChooseString match[1], catListbox
-         } catch {
-            MsgBox 'Category "' match[1] '" not found.'
-         }
-         return
-      } else {
-         ;searchQuery := linkArray[Link,2]
-         GoogleSearch(linkArray[linksListbox.value][2])
-      }
-   } else if (minMode ==0 && activeControl == catListbox) {
-      linksListbox.Focus()
-   } else if (activeControl == editBar || activeControl == submitButton) {
-      if (lastSub.UsrIn != ""){
-         if (lastSub.UsrIn ~= "^ .*") {
-            linksListbox.focus()
-         } else if (RegExMatch(lastSub.UsrIn, "^[1-9]>.*")){
-            mouseKeep:=1
-            EditFav()
-            DestroyGui()
-            LoadGUI()
-            mouseKeep:=0
-         } else if (lastSub.UsrIn ~= "i)^set>.*"){
-            mouseKeep:=1
-            ;setMax:=0
-            EditSettings()
-            DestroyGui()
-            LoadGUI()
-            ;if (setMax=1)
-            ;   GuiControl, Choose, index, % "|" . lastIndex
-            mouseKeep:=0
-         } else if (lastSub.UsrIn ~= "i)^import>.*") {
-            if (lastSub.UsrIn ~= "i).*html$") {
-               ImportChrome()
-            } else if (lastSub.UsrIn ~= "i).*csv$") {
-               ImportCSV()
-            } else
-               MsgBox "Unsupported format"
-            DestroyGui()
-            LoadGui()
-         } else if (lastSub.UsrIn ~= "i)^load>.*") {
-            LoadRepo()
-            DestroyGui()
-            LoadGui()
-         } else if (lastSub.UsrIn ~= "i)^export>cat.{0,5}>h.{0,4}s.{0,5}") {
-            ShareCat()
-            DestroyGui()
-            openSource()
-         } else if (lastSub.UsrIn ~= "i)^export>cat.{0,5}") {
-            ExportCat()
-            DestroyGui()
-            OpenSource()
-         } else if (lastSub.UsrIn ~= "i)^export>repo.{0,6}") {
-            ExportRepo()
-            DestroyGui()
-            OpenSource()
-         } else if (lastSub.UsrIn ~= ".*\+.*"){
-            linksListbox.Opt("-redraw")
-            AppendLinks()
-            LoadLinks()
-            linksListbox.Opt("+redraw")
-            editBar.Value := ""
-         } else if (lastSub.UsrIn ~= "i)del.{0,3}\-[0-9|cat.{0,5}]*"){
-            linksListbox.Opt("-redraw")
-            RemoveLinks()
-            LoadLinks()
-            linksListbox.Opt("+redraw")
-            editBar.Value := ""
-         } else if (lastSub.UsrIn ~= "[1-9]*~[1-9]*" || lastSub.UsrIn ~= "[1-9]*%[1-9]*"){
-            linksListbox.Opt("-redraw")
-            ReorderLinks()
-            LoadLinks()
-            linksListbox.Opt("+redraw")
-            editBar.Value := ""
+   if (minMode == 0) {
+      if (activeControl == linksListbox) {
+         ;MsgBox "DING"
+         if (linkArray[linksListbox.value][2] == "*") {
+            linkLabel:=linkArray[linksListbox.value][1]
+            RegExMatch(linkLabel, "<(.*?)>", &match)
+            ;GuiControl, ChooseString, index, % "|" . match[1]
+            ;catListbox.Choose(match[1])
+            try {
+               ControlChooseString match[1], catListbox
+            } catch {
+               MsgBox 'Category "' match[1] '" not found.'
+               return
+            }
+            ;return
          } else {
-            GoogleSearch(lastSub.UsrIn)
-         } 
-      } else if (linkArray[linksListbox.value][2] == "*") {
-         linkLabel:=linkArray[linksListbox.value][1]
-         RegExMatch(linkLabel, "<(.*?)>", &match)
-         ;GuiControl, ChooseString, index, % "|" . match[1]
-         ;catListbox.choose(match[1])
-         try {
-            ControlChooseString match[1], catListbox
-         } catch {
-            MsgBox 'Category "' match[1] '" not found.'
+            ;searchQuery := linkArray[Link,2]
+            GoogleSearch(linkArray[linksListbox.value][2])
          }
-         return
-      } else {
-         searchURL := linkArray[linksListbox.value][2]
-         GoogleSearch(searchURL)
+      } else if (activeControl == catListbox) {
+         linksListbox.Focus()
+      } else { ;if (activeControl == editBar || activeControl == submitButton) {
+         if (lastSub.UsrIn != ""){
+            if (lastSub.UsrIn ~= "^ .*") {
+               linksListbox.focus()
+            } else if (lastSub.UsrIn ~= "i)^import>.*") {
+               if (lastSub.UsrIn ~= "i).*html$") {
+                  ImportChrome()
+               } else if (lastSub.UsrIn ~= "i).*csv$") {
+                  ImportCSV()
+               } else
+                  MsgBox "Unsupported format"
+               DestroyGui()
+               LoadGui()
+            } else if (lastSub.UsrIn ~= "i)^load>.*") {
+               LoadRepo()
+               DestroyGui()
+               LoadGui()
+            } else if (lastSub.UsrIn ~= "i)^export>cat.{0,5}>h.{0,4}s.{0,5}") {
+               ShareCat()
+               DestroyGui()
+               openSource()
+            } else if (lastSub.UsrIn ~= "i)^export>cat.{0,5}") {
+               ExportCat()
+               DestroyGui()
+               OpenSource()
+            } else if (lastSub.UsrIn ~= "i)^export>repo.{0,6}") {
+               ExportRepo()
+               DestroyGui()
+               OpenSource()
+            } else if (lastSub.UsrIn ~= ".*\+.*"){
+               linksListbox.Opt("-redraw")
+               AppendLinks()
+               LoadLinks()
+               linksListbox.Opt("+redraw")
+               editBar.Value := ""
+            } else if (lastSub.UsrIn ~= "i)del.{0,3}\-[0-9|cat.{0,5}]*"){
+               linksListbox.Opt("-redraw")
+               RemoveLinks()
+               LoadLinks()
+               linksListbox.Opt("+redraw")
+               editBar.Value := ""
+            } else if (lastSub.UsrIn ~= "[1-9]*~[1-9]*" || lastSub.UsrIn ~= "[1-9]*%[1-9]*"){
+               linksListbox.Opt("-redraw")
+               ReorderLinks()
+               LoadLinks()
+               linksListbox.Opt("+redraw")
+               editBar.Value := ""
+            }
+         } else if (linkArray[linksListbox.value][2] == "*") {
+            linkLabel:=linkArray[linksListbox.value][1]
+            RegExMatch(linkLabel, "<(.*?)>", &match)
+            ;GuiControl, ChooseString, index, % "|" . match[1]
+            ;catListbox.choose(match[1])
+            try {
+               ControlChooseString match[1], catListbox
+            } catch {
+               MsgBox 'Category "' match[1] '" not found.'
+               return
+            }
+            ;return
+         } else if (lastSub.UsrIn == "") {
+            searchURL := linkArray[linksListbox.value][2]
+            GoogleSearch(searchURL)
+         }
       }
    }
+   ;if (minMode==0 || minMode ==1) {
+      if (RegExMatch(lastSub.UsrIn, "^[1-9]>.*")){
+         mouseKeep:=1
+         EditFav()
+         DestroyGui()
+         LoadGUI()
+         mouseKeep:=0
+      } else if (lastSub.UsrIn ~= "i)^set>.*"){
+         mouseKeep:=1
+         ;setMax:=0
+         EditSettings()
+         DestroyGui()
+         LoadGUI()
+         ;if (setMax=1)
+         ;   GuiControl, Choose, index, % "|" . lastIndex
+         mouseKeep:=0
+      } else if (lastSub.UsrIn != "") {
+         GoogleSearch(lastSub.UsrIn)
+      } else
+         return
+      
+   ;}
 }
 
 InputAlgorithm(*)
