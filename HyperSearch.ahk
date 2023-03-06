@@ -217,7 +217,9 @@ BuildMainGUI(*)
    finalXY := SetMonitorBounds(h, w)
    MainGui.Show("h" h " w" w " x" finalXY[1] " y" finalXY[2])
    ControlChooseIndex lastIndex, catListbox
-   linksListbox.Choose(lastLinkIndex)
+   try {
+      linksListbox.Choose(lastLinkIndex)
+   }
    SetLinkHighlight()
 }
 
@@ -319,6 +321,7 @@ ButtonSubmit(*)
    lastSub := %currentGui%.Submit(0)
    global mouseKeep
    activeControl := %currentGui%.FocusedCtrl
+
    if (minMode == 0) {
       if (activeControl == linksListbox) {
          ;MsgBox "DING"
@@ -338,8 +341,11 @@ ButtonSubmit(*)
          linksListbox.Focus()
       } else if (activeControl == editBar || activeControl == submitButton) {
          if (lastSub.UsrIn != ""){
-            if (lastSub.UsrIn ~= "^ .*") {
+            if (lastSub.UsrIn ~= "^ .*" || editBar.value ~= "^#.*") {
+               lastLinkIndex:=SubStr(editBar.value,2)
                linksListbox.focus()
+               editBar.value:=""
+               return
             } else if (lastSub.UsrIn ~= "i)^import>.*") {
                if (lastSub.UsrIn ~= "i).*html$") {
                   ImportChrome()
@@ -435,6 +441,7 @@ ButtonSubmit(*)
 
 InputAlgorithm(*)
 {
+   global lastLinkIndex
    if (minMode == 0) {
       if(RegExMatch(editBar.value, "^ .+"))
       {
@@ -446,7 +453,15 @@ InputAlgorithm(*)
       } else if(RegExMatch(editBar.value, "^#.+"))
          {
             try {
-               linksListbox.choose(SubStr(editBar.value,2))
+               try {
+                  usrIndex := Integer(SubStr(editBar.value,2))
+                  linksListbox.choose(usrIndex)
+                  lastLinkIndex:=linksListbox.value
+               } catch {
+                  linksListbox.choose(SubStr(editBar.value,2))
+               }
+               
+               SetLinkHighlight()
             } catch {
                sleep 50
             }
