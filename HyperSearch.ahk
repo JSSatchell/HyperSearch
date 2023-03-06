@@ -381,17 +381,17 @@ ButtonSubmit(*)
                return
             } else if (lastSub.UsrIn ~= ".*\+.*"){
                AppendLinks()
-               LoadLinks()
+               LoadLinks("AppendLinks")
                editBar.Value := ""
                return
             } else if (lastSub.UsrIn ~= "i)del.{0,3}\-[0-9|cat.{0,5}]*"){
                RemoveLinks()
-               LoadLinks()
+               LoadLinks("RemoveLinks")
                editBar.Value := ""
                return
             } else if (lastSub.UsrIn ~= "[1-9]*~[1-9]*" || lastSub.UsrIn ~= "[1-9]*%[1-9]*"){
                ReorderLinks()
-               LoadLinks()
+               LoadLinks("ReorderLinks")
                editBar.Value := ""
                return
             }
@@ -443,7 +443,14 @@ InputAlgorithm(*)
          } catch {
             sleep 50
          }
-      }
+      } else if(RegExMatch(editBar.value, "^#.+"))
+         {
+            try {
+               linksListbox.choose(SubStr(editBar.value,2))
+            } catch {
+               sleep 50
+            }
+         }
    }
 }
 
@@ -461,7 +468,7 @@ CopyLink(*)
    }
 }
 
-LoadLinks(*)
+LoadLinks(prev*)
 {
    lastSub := %currentGui%.Submit(0)
    linkCell:=""
@@ -470,8 +477,8 @@ LoadLinks(*)
    linksListbox.Opt("-Redraw")
    linksListbox.Delete()
    global lastLinkIndex
-   if (%currentGui%.FocusedCtrl == catListbox)
-      lastLinkIndex := 1
+   if (prev[1]==catListbox)
+      lastLinkIndex:=1
    Loop HSR_Array.Length
    {
       if (lastSub.index ==HSR_Array[A_Index][1]) {
@@ -517,7 +524,7 @@ ActivateLinks(*)
    if (linkArray[linksListbox.value][2] == "*") {
       linkLabel:=linkArray[linksListbox.value][1]
       RegExMatch(linkLabel, "<(.*?)>", &match)
-      ControlChooseString(match[1], catListbox)
+      ControlChooseString match[1], catListbox
    } else {
       webSearch(linkArray[linksListbox.value][2])
    }
@@ -640,6 +647,7 @@ RemoveLinks(*)
    global linkArray
    removeTxt:=StrSplit(editBar.value,"-",,3)
    global linkString:=""
+   global lastLinkIndex:=linksListbox.value
    removeTxtIndex:=removeTxt[2]
    ;Sample: 1DELETE-2LinkIndex
    if (removeTxt[2] ~= "i)cat.{0,5}") { ; remove cateogry
@@ -654,6 +662,7 @@ RemoveLinks(*)
       }
       start:=min(val1,val2)
       stop:=max(val1,val2)
+      lastLinkIndex:=start
       numRemove := stop-start + 1
       i:=start
       chckList := ""
@@ -695,6 +704,7 @@ RemoveLinks(*)
          Return
       If (contMsg = "Yes")
       {
+         lastLinkIndex:=removeTxt[2]
          linkArray.RemoveAt(removeTxt[2])
       }
    }
@@ -713,7 +723,7 @@ DelLink(*)
    If (contMsg = "Yes")
       linkArray.RemoveAt(linksListbox.value)
    UpdateLinkList()
-   LoadLinks()
+   LoadLinks("DelLink")
    linksListbox.Opt("+redraw")
    editBar.value := ""
 }
