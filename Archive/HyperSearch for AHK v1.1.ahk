@@ -1,3 +1,5 @@
+;;;;; FOR AHK v1.1
+
 Menu, Tray, Icon, shell32.dll, 210 ; Magnifying glass icon
 
 #NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
