@@ -56,6 +56,7 @@ UsrIn := ""
 linkArray := []
 linkString := ""
 hsrDup:=0
+guiReload:=1
 
 ; Initialize GUI variables
 MainGui := Gui()
@@ -193,6 +194,7 @@ BuildLiteGUI(*)
 BuildMainGUI(*)
 {
    ; Initially Generated Using SmartGUI Creator 4.0
+   global guiReload:=1
    LoadMenu()
    LocalHotkeysOn()
    global lastIndex
@@ -221,6 +223,7 @@ BuildMainGUI(*)
       linksListbox.Choose(lastLinkIndex)
    }
    SetLinkHighlight()
+   guiReload:=0
 }
 
 BuildHSRArray(*)
@@ -324,7 +327,6 @@ ButtonSubmit(*)
 
    if (minMode == 0) {
       if (activeControl == linksListbox) {
-         ;MsgBox "DING"
          if (linkArray[linksListbox.value][2] == "*") {
             linkLabel:=linkArray[linksListbox.value][1]
             RegExMatch(linkLabel, "<(.*?)>", &match)
@@ -336,6 +338,7 @@ ButtonSubmit(*)
             }
          } else {
             webSearch(linkArray[linksListbox.value][2])
+            return
          }
       } else if (activeControl == catListbox) {
          linksListbox.Focus()
@@ -442,6 +445,7 @@ ButtonSubmit(*)
 InputAlgorithm(*)
 {
    global lastLinkIndex
+   global linkArray
    if (minMode == 0) {
       if(RegExMatch(editBar.value, "^ .+"))
       {
@@ -455,6 +459,8 @@ InputAlgorithm(*)
             try {
                try {
                   usrIndex := Integer(SubStr(editBar.value,2))
+                  if (usrIndex>linkArray.length)
+                     usrIndex:=linkArray.length
                   linksListbox.choose(usrIndex)
                   lastLinkIndex:=linksListbox.value
                } catch {
@@ -491,8 +497,10 @@ LoadLinks(prev*)
    global linkArray := []
    linksListbox.Opt("-Redraw")
    linksListbox.Delete()
+   ;MsgBox lastLinkIndex "`n" prev[1]
    global lastLinkIndex
-   if (prev[1]==catListbox)
+   global guiReload
+   if (guiReload == 0 && prev[1]==catListbox)
       lastLinkIndex:=1
    Loop HSR_Array.Length
    {
