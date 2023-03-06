@@ -376,17 +376,17 @@ ButtonSubmit(*)
             } else if (lastSub.UsrIn ~= "i)^export>cat.{0,5}>h.{0,4}s.{0,5}") {
                ShareCat()
                DestroyGui()
-               openSource()
+               Run A_WorkingDir
                return
             } else if (lastSub.UsrIn ~= "i)^export>cat.{0,5}") {
                ExportCat()
                DestroyGui()
-               OpenSource()
+               Run A_WorkingDir
                return
             } else if (lastSub.UsrIn ~= "i)^export>repo.{0,6}") {
                ExportRepo()
                DestroyGui()
-               OpenSource()
+               Run A_WorkingDir
                return
             } else if (lastSub.UsrIn ~= ".*\+.*"){
                AppendLinks()
@@ -1204,13 +1204,9 @@ NewRepo(*)
       return
    }
 
-   FileAppend "
-      (
-" Quick Access","[<Quick Start Guide>](*)"
-"Quick Start Guide","[NAVIGATION REFERENCE](https://github.com/JSSatchell/HyperSearch#navigation)[Press Space to search the category index on the left]()[Tab between control windows]()[Press Enter after typing Space to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE](https://github.com/JSSatchell/HyperSearch#adding--removing-categories--links)[Edit Favorites - 'Favorite#>Label>URL'](https://github.com/JSSatchell/HyperSearch#update-favorites)[Add Index Category - 'Category Name+']()[Add link - '+Link Name+Link URL']()[Add at Position - '+Position#+Link Name+LinkURL']()[Remove Selected Link - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete-Category']()[ ]()[SETTINGS](https://github.com/JSSatchell/HyperSearch#update-the-settings)[Min/Max Mode - 'Set>Min/Max']()[Dark/Light Mode - 'Set>Dark/Light']()[Transparency - 'Set>Opacity>Percentage']()[]()[CLICK HERE for full feature list & updates](https://github.com/JSSatchell/HyperSearch)"
-   )", newRepo
+   repo := newRepo
    IniWrite newRepo, "HS_Settings.ini", "Settings", "Repository"
-   repo:=newRepo
+   GenerateHSR()
 }
 
 ;;;;; FAVORITES BAR
@@ -1230,8 +1226,8 @@ LoadMenu(*)
    }
    ExitMenu.Add("Close Window", DestroyGui)
    ExitMenu.Add("Exit App", ExitAppFunc)
-   HelpMenu.Add("Support and updates", openGit)
-   HelpMenu.Add("Open source folder", openSource)
+   HelpMenu.Add("Support and updates", helpLinks)
+   HelpMenu.Add("Open source folder", helpLinks)
    MainMenu.Add("[&?]", HelpMenu, "+right")
    MainMenu.Add("[&X]", ExitMenu, "+right")
 }
@@ -1273,15 +1269,13 @@ EditFav(*)
    DestroyGui()
 }
 
-openGit(*)
-{
-   Run "https://github.com/JSSatchell/HyperSearch"
-   DestroyGui()
-}
 
-openSource(*)
+helpLinks(choice*)
 {
-   Run A_WorkingDir
+   if (choice=="Support and updates")
+      Run "https://github.com/JSSatchell/HyperSearch"
+   else if (choice=="Open source folder")
+      Run A_WorkingDir
    DestroyGui()
 }
 
