@@ -1,4 +1,4 @@
-### NOTE: HyperSearch Lite is now fully integrated into HyperSearch via "Min Mode"
+### NOTE: HyperSearch Lite is now fully integrated into HyperSearch via "Min Mode" therefore this standalone version is depreciated
 
 ---
 
