@@ -981,7 +981,7 @@ ImportChrome(*)
    search:=StrSplit(editBar.value,">",,2)
    bkmkLines:=[]
    global HSR_Array
-   bkmkPath:=search[2]
+   bkmkPath:=Trim(search[2], '"')
    if !FileExist(bkmkPath) {
       Msgbox "File could not be read."
       return
@@ -1154,34 +1154,36 @@ ImportCSV(*)
    global repo
    replace:=0
    search:=StrSplit(editBar.value,">",,2)
-   if (search[2]~="i).*csv$")
-      newCSVPath:=search[2]
-   else
-      newCSVPath:=search[2] ".csv"
+   newCSVPath:=Trim(search[2],'"')
+   if (newCSVPath~="i).*csv$"==0)
+      newCSVPath.=".csv"
 
    if FileExist(newCSVPath) {
       newCSV := FileRead(newCSVPath)
       newCSV:="`n" . newCSV
       FileAppend newCSV, repo
    } else {
-      MsgBox "Specified file could not be found."
+      MsgBox "Specified file could not be found.`n" newCSVPath
    }
 }
 
-LoadRepo(*)
+LoadRepo(path*)
 {
    global repo
-   search:=StrSplit(editBar.value,">",,2)
-   if (search[2]~="i).*csv$")
-      repoIn:=search[2]
-   else
-      repoIn:=search[2] ".csv"
+   if (path.Has(1)) {
+      repoIn:=path[1]
+   } else {
+      search:=StrSplit(editBar.value,">",,2)
+      repoIn:=Trim(search[2], '"')
+      if (repoIn~="i).*csv$"==0)
+         repoIn.= ".csv"
+   }
 
    if FileExist(repoIn) {
       repo:=repoIn
       IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
    } else {
-      MsgBox "Specified file could not be found."
+      MsgBox "Specified file could not be found.`n" repoIn
    }
 }
 
@@ -1189,10 +1191,19 @@ NewRepo(*)
 {
    global repo
    search:=StrSplit(editBar.value,">",,2)
-   if (search[2]~="i).*csv$")
+   if(search[2]=="")
+      newRepo:="HSR_Master.csv"
+   else if (search[2]~="i).*csv$")
       newRepo:=search[2]
    else
       newRepo:=search[2] ".csv"
+
+   if FileExist(newRepo) {
+      MsgBox newRepo " already exists. The file will be loaded."
+      LoadRepo(newRepo)
+      return
+   }
+
    FileAppend "
       (
 " Quick Access","[<Quick Start Guide>](*)"
