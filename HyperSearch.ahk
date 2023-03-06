@@ -275,7 +275,7 @@ BuildHSRArray(*)
 
 ;;;;; SEARCH FUNCTIONS
 
-GoogleSearch(searchQuery)
+webSearch(searchQuery)
 {
    ;;;;;Adapted from this thread: https://www.autohotkey.com/board/topic/13404-google-search-on-highlighted-text/
    if (searchQuery != "" && searchQuery != " "){
@@ -308,7 +308,7 @@ searchHighlight(ThisHotkey)
       MsgBox "Could not perform search."
       return
    }
-   GoogleSearch(A_Clipboard)
+   webSearch(A_Clipboard)
    A_Clipboard := prevClipboard
 }
 
@@ -332,7 +332,7 @@ ButtonSubmit(*)
                return
             }
          } else {
-            GoogleSearch(linkArray[linksListbox.value][2])
+            webSearch(linkArray[linksListbox.value][2])
          }
       } else if (activeControl == catListbox) {
          linksListbox.Focus()
@@ -407,7 +407,7 @@ ButtonSubmit(*)
                }
             } else {
                searchURL := linkArray[linksListbox.value][2]
-               GoogleSearch(searchURL)
+               webSearch(searchURL)
             }
          }
       }
@@ -428,7 +428,7 @@ ButtonSubmit(*)
       if (minMode == 1 && lastSub.UsrIn == "")
             return
       else {
-         GoogleSearch(lastSub.UsrIn)
+         webSearch(lastSub.UsrIn)
       }
    }
 }
@@ -470,6 +470,8 @@ LoadLinks(*)
    linksListbox.Opt("-Redraw")
    linksListbox.Delete()
    global lastLinkIndex
+   if (%currentGui%.FocusedCtrl == catListbox)
+      lastLinkIndex := 1
    Loop HSR_Array.Length
    {
       if (lastSub.index ==HSR_Array[A_Index][1]) {
@@ -477,7 +479,6 @@ LoadLinks(*)
          break
       }
    }
-
    if (linkCell == "")
       linkCell:="[]()"
 
@@ -518,7 +519,7 @@ ActivateLinks(*)
       RegExMatch(linkLabel, "<(.*?)>", &match)
       ControlChooseString(match[1], catListbox)
    } else {
-      GoogleSearch(linkArray[linksListbox.value][2])
+      webSearch(linkArray[linksListbox.value][2])
    }
 }
 
@@ -1120,10 +1121,18 @@ ImportCSV(*)
    global repo
    replace:=0
    search:=StrSplit(editBar.value,">",,2)
-   newCSVPath:=search[2]
-   newCSV := FileRead(newCSVPath)
-   newCSV:="`n" . newCSV
-   FileAppend newCSV, repo
+   if (search[2]~="i).*csv$")
+      newCSVPath:=search[2]
+   else
+      newCSVPath:=search[2] ".csv"
+
+   if FileExist(newCSVPath) {
+      newCSV := FileRead(newCSVPath)
+      newCSV:="`n" . newCSV
+      FileAppend newCSV, repo
+   } else {
+      MsgBox "Specified file could not be found."
+   }
 }
 
 LoadRepo(*)
@@ -1134,6 +1143,7 @@ LoadRepo(*)
       repoIn:=search[2]
    else
       repoIn:=search[2] ".csv"
+
    if FileExist(repoIn) {
       repo:=repoIn
       IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
@@ -1142,7 +1152,8 @@ LoadRepo(*)
    }
 }
 
-NewRepo(*) {
+NewRepo(*)
+{
    global repo
    search:=StrSplit(editBar.value,">",,2)
    if (search[2]~="i).*csv$")
@@ -1187,7 +1198,7 @@ FavButton(favName, favPos, FavMenu)
    if(URL == "")
       MsgBox "Favorite " . favPos . " is undefined."
    else {
-      GoogleSearch(URL)
+      webSearch(URL)
       DestroyGui()
    }
 }
