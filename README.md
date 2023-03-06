@@ -72,7 +72,9 @@ Type a `Space` at the beginning of your search to search the index on the left i
     
 If the search starts with a `Space`, pressing `Enter` will set the focus to the links window below the search bar. Pressing `Enter` again will activate the highlighted link.
 
-If focus is on the search bar, `Tab` will first go to the index which can be navigated by pressing the letter corresponding to the first letter of the desired category. A second `Tab` will highlight the links window.
+Type a `#` followed by a number to highlight the link in the specified position.
+
+    #10
 
 `Alt`+`A` and `Alt`+`D` will also toggle between the two listboxes, skipping the search bar.
 
@@ -194,7 +196,7 @@ To set a new link for an existing favorite without updating the label, use `>>`
 
 #### LOAD & IMPORT
 
-To load a repository other than the default HSR_Master.csv file, type `Load>` followed by the pathname of a .csv file that is formatted consistently with HyperSearch. If the file is in the same folder as the HyperSearch executable, only the filename need be typed (with .csv extension and case-sensitive spelling).
+To load a repository other than the default HSR_Master.csv file, type `Load>` followed by the pathname of a .csv file that is formatted consistently with HyperSearch. If the file is in the same folder as the HyperSearch executable, only the filename need be typed.
 
     Load>C:\Users\username\Documents\HyperSearch\Repositories\MyCustomRepository.csv
     
@@ -210,7 +212,13 @@ To import a HyperSearch category or full HyperSearch repository, type `Import>` 
 
 When importing a .csv, all links will be added to the current repository.
 
-_NOTE: When adding new categories via .csv or .html if any imported category has the same name as an existing category, the links from the new category will not be visible. To get around this, rename the exisiting category before or after the import and the new category and its corresponding links will be revealed._
+_NOTE: When adding new categories via .csv if any imported category has the same name as an existing category, the links from the new category will not be visible. To get around this, rename the exisiting category before or after the import and the new category and its corresponding links will be revealed._
+
+To create a new repository with the default categories, type `New>` followed by the desired filename or path of the new repository.
+
+    New>HSR_New.csv
+    
+_NOTE: If the new filename is the same as a file in the specified folder, the existing file will be loaded. If no filename is provided, the default name "HSR_Master.csv" will be used. If "HSR_Master.csv" already exists, it will be loaded._
 
 [^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
 
