@@ -3,6 +3,8 @@ Instant internet search, minus the distractions.
 
 In video editor language: It's [FX Console](https://www.videocopilot.net/tutorials/fx_console_plugin/?vc=true)/[Excalibur](https://knightsoftheeditingtable.com/excalibur) for the internet.
 
+*Now fully updated to AHK v2*
+
 ### [DOWNLOAD](https://github.com/JSSatchell/HyperSearch/releases)  |  [QUICK START VIDEO](https://youtu.be/1HC9vhA5meY)
 
 ### GUIDE CONTENTS
