@@ -349,6 +349,7 @@ ButtonSubmit(*)
                   MsgBox "Unsupported format"
                DestroyGui()
                LoadGui()
+               return
             } else if (lastSub.UsrIn ~= "i)^load>.*") {
                LoadRepo()
                DestroyGui()
@@ -367,35 +368,32 @@ ButtonSubmit(*)
                ShareCat()
                DestroyGui()
                openSource()
+               return
             } else if (lastSub.UsrIn ~= "i)^export>cat.{0,5}") {
                ExportCat()
                DestroyGui()
                OpenSource()
+               return
             } else if (lastSub.UsrIn ~= "i)^export>repo.{0,6}") {
                ExportRepo()
                DestroyGui()
                OpenSource()
+               return
             } else if (lastSub.UsrIn ~= ".*\+.*"){
-               linksListbox.Opt("-redraw")
                AppendLinks()
                LoadLinks()
-               linksListbox.Opt("+redraw")
                editBar.Value := ""
                return
             } else if (lastSub.UsrIn ~= "i)del.{0,3}\-[0-9|cat.{0,5}]*"){
-               mouseKeep := 1
-               linksListbox.Opt("-redraw")
                RemoveLinks()
                LoadLinks()
-               linksListbox.Opt("+redraw")
                editBar.Value := ""
-               mouseKeep := 0
+               return
             } else if (lastSub.UsrIn ~= "[1-9]*~[1-9]*" || lastSub.UsrIn ~= "[1-9]*%[1-9]*"){
-               linksListbox.Opt("-redraw")
                ReorderLinks()
                LoadLinks()
-               linksListbox.Opt("+redraw")
                editBar.Value := ""
+               return
             }
          } else if (lastSub.UsrIn == "") {
             if (linkArray[linksListbox.value][2] == "*") {
@@ -412,7 +410,6 @@ ButtonSubmit(*)
                GoogleSearch(searchURL)
             }
          }
-   
       }
    }
    if (RegExMatch(lastSub.UsrIn, "^[1-9]>.*")){
@@ -472,6 +469,7 @@ LoadLinks(*)
    global linkArray := []
    linksListbox.Opt("-Redraw")
    linksListbox.Delete()
+   global lastLinkIndex
    Loop HSR_Array.Length
    {
       if (lastSub.index ==HSR_Array[A_Index][1]) {
@@ -479,6 +477,10 @@ LoadLinks(*)
          break
       }
    }
+
+   if (linkCell == "")
+      linkCell:="[]()"
+
    newPos:=1
    labelIndex:=1
    while (RegExMatch(linkCell, "\[(.*?)]", &currentLabel, newPos) != 0) {
@@ -493,13 +495,20 @@ LoadLinks(*)
       newPos := currentLink.Pos(1)
       labelIndex++
    }
+
+   linksListbox.Opt("+Redraw")
    try {
-      urlDisplay:=linkArray[1][2]
+      linksListbox.Choose(lastLinkIndex)
+   } catch {
+      linksListbox.Choose(1)
+   }
+
+   try {
+      urlDisplay:=linkArray[linksListbox.value][2]
    } catch {
       urlDisplay:="undefined"
    }
    urlTextGui.value := urlDisplay
-   linksListbox.Opt("+Redraw")
 }
 
 ActivateLinks(*)
@@ -530,6 +539,7 @@ AppendLinks(*)
    lastSub := %currentGui%.Submit(0)
    global HSR_Array
    global linkString:=""
+   global lastLinkIndex:=linksListbox.value
    ; Sample: 1Category+2LinkIndex+3LinkName+4URL
    linkTxt:=StrSplit(lastSub.UsrIn,"+",,4)
    linkIndex:=linkTxt[2]
@@ -542,11 +552,11 @@ AppendLinks(*)
          }
       }
       
-      if (linkTxt[2]!="" && linkTxt.Has(3)) { ; Add link in first position
+      if (linkTxt.Has(2) && linkTxt.Has(3)) { ; Add link in first position
          cleanLabel := CleanLabels(linkTxt[2])
          appendTxt:= '`n"' . linkTxt[1] . '",' . '"[' . cleanLabel . "](" . linkTxt[3] . ')"'
          FileAppend appendTxt, repo
-         return
+         ;return
       } else if (SubStr(lastSub.UsrIn,-2) == "++") { ; Rename current category
          Loop HSR_Array.Length
          {
@@ -563,25 +573,38 @@ AppendLinks(*)
       } else {
          return
       }
-      mouseKeep:=1
+      global mouseKeep:=1
       newCat:=linkTxt[1]
       DestroyGui()
       BuildMainGUI()
       catListbox.Choose(newCat)
+      linksListbox.Choose(1)
       mouseKeep:=0
       return
    } else if (linkIndex == "v") {
       cleanLabel := CleanLabels(linkTxt[3])
       linkArray.push([cleanLabel,linkTxt[4]]) ; Add link in last position
+      lastLinkIndex:=linkArray.length
    } else if IsNumber(linkIndex) ; Position specific Link
    {
       linkIndex := Integer(linkIndex)
-      if (linkTxt.Has(3) && linkTxt.Has(4)) {
+      if (linkIndex>linkArray.length) {
+         diff := linkIndex - linkArray.length
+         i:=1
+         while i< diff {
+            linkArray.InsertAt(0,["",""])
+            i++
+         }
+      }
+      lastLinkIndex := linkIndex
+      if (linkTxt[3] != "" && linkTxt.Has(4)) {
          cleanLabel := CleanLabels(linkTxt[3])
          linkArray.InsertAt(linkIndex,[cleanLabel,linkTxt[4]]) ; Insert at specified position
-      } else if (!linkTxt.Has(3)) {
+      } else if (linkTxt[3]=="") {
          if (!linkTxt.Has(4)) {
             linkArray.InsertAt(linkIndex,[linkTxt[3],linkTxt[4]]) 
+         } else if (linkTxt[4]=="") {
+            linkArray.InsertAt(linkindex,["",""])
          } else {
             linkArray[linkIndex][2]:=linkTxt[4] ; Update URL at position
             MsgBox linkArray[linkIndex][1] . " now links to " . linkArray[linkIndex][2]
@@ -593,10 +616,11 @@ AppendLinks(*)
          MsgBox oldLabel . " is now labelled " . linkArray[linkIndex][1]
       }
    } else { ; Unspecified position number
-      if (linkTxt.Has(2) && linkTxt.Has(3)) {
+      if (linkTxt[2] != "" && linkTxt.Has(3)) {
          cleanLabel := CleanLabels(linkTxt[2])
          linkArray.InsertAt(1,[cleanLabel,linkTxt[3]]) ; Insert in first position
-      } else if (!linkTxt.Has(2)) {
+         lastLinkIndex := 1
+      } else if (linkTxt[2]=="") {
          linkArray[linksListbox.value][2]:=linkTxt[3] ; Update URL of current
          MsgBox linkArray[linksListbox.value][1] . " now links to " . linkArray[linksListbox.value][2]
       } else if (!linkTxt.Has(3)) {
@@ -698,6 +722,7 @@ DelCat(*)
    lastSub := %currentGui%.Submit(0)
    global linkArray
    global HSR_Array
+   global mouseKeep
    contMsg := MsgBox("Do you want to delete all of the data in " lastSub.index "?", "Continue?", 260)
    If (contMsg = "No")
       return
@@ -726,12 +751,14 @@ DelCat(*)
 ReorderLinks(*)
 {
    global linkArray
+   global lastLinkIndex
    if (instr(editBar.value, "~"))
       swapTxt:=StrSplit(editBar.value,"~",,2)
    else if (instr(editBar.value, "%"))
       swapTxt:=StrSplit(editBar.value,"`%",,2)
    try {
       swapTxt2 := Integer(swapTxt[2])
+      lastLinkIndex:=swapTxt2
    } catch TypeError {
       MsgBox "Please ony use number values."
       return
