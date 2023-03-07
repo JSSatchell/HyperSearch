@@ -21,6 +21,24 @@ if (ProgID ~= "FirefoxURL.*")
 if (ProgID = "BraveHTML")
    Browser := "brave.exe"
 
+; Initialize global variables
+version:="0.2.1"
+index:=1
+lastIndex:=1
+lastLinkIndex:=1
+mouseKeep:=0
+urlDisplay:=""
+todayQuick := FormatTime(, "yyMMdd")
+controlColor := ""
+urlTxtColor := ""
+guiFont := ""
+themeSel := ""
+UsrIn := ""
+linkArray := []
+linkString := ""
+hsrDup:=0
+guiReload:=1
+
 ; Check for settings File
 if !FileExist("HS_Settings.ini")
    GenerateSettings()
@@ -40,23 +58,6 @@ currentGui := minMode = 1 ? "LiteGui" : "MainGui"
 if !FileExist(repo) {
    GenerateHSR("HSR_Master.csv")
 }
-
-; Initialize global variables
-index:=1
-lastIndex:=1
-lastLinkIndex:=1
-mouseKeep:=0
-urlDisplay:=""
-todayQuick := FormatTime(, "yyMMdd")
-controlColor := ""
-urlTxtColor := ""
-guiFont := ""
-themeSel := ""
-UsrIn := ""
-linkArray := []
-linkString := ""
-hsrDup:=0
-guiReload:=1
 
 ; Initialize GUI variables
 MainGui := Gui()
@@ -1432,6 +1433,7 @@ RMenu(ThisHotkey)
 
 CheckSettings(*)
 {
+   global currentVersion
    newSettings:=""
    sections := IniRead("HS_Settings.ini")
    sectionsArray:=StrSplit(sections,"`n")
@@ -1454,25 +1456,28 @@ CheckSettings(*)
    } else if (lastSettingArray[1]=="Jump") {
       newSettings:="`nRepository=HSR_Master.csv"
    }
-   FileAppend newSettings, "HS_Settings.ini"
+   if (newSettings!="")
+      FileAppend newSettings, "HS_Settings.ini"
    if (sectionsArray[1]!="Version") {
       oldOpVal := IniRead("HS_Settings.ini", "Settings", "Trans")
       IniDelete("HS_Settings.ini", "Settings", "Trans")
       FileAppend("Opacity=" oldOpVal, "HS_Settings.ini")
       oldIni := FileRead("HS_Settings.ini")
-      newIni:="[Version]`nCurrentVersion=0.2.0`n`n" oldIni
+      newIni:="[Version]`nCurrentVersion=" version "`n`n" oldIni
       FileDelete("HS_Settings.ini")
       FileAppend(newIni,"HS_Settings.ini")
    }
+
+   IniWrite(version, "HS_Settings.ini","Version","CurrentVersion")
 }
 
 GenerateSettings(*)
 {
+   global version
+   FileAppend "[Version]`nCurrentVersion=" version "`n`n", "HS_Settings.ini"
+
    FileAppend "
    (
-[Version]
-CurrentVersion=0.2.0
-
 [Search Engine]
 Default="https://duckduckgo.com/?q="
 DuckDuckGo="https://duckduckgo.com/?q="
