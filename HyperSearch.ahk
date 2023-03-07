@@ -38,7 +38,7 @@ currentGui := minMode = 1 ? "LiteGui" : "MainGui"
 
 ; Check for repo file
 if !FileExist(repo) {
-   GenerateHSR()
+   GenerateHSR("HSR_Master.csv")
 }
 
 ; Initialize global variables
@@ -236,13 +236,13 @@ BuildHSRArray(*)
       HSR_String := FileRead(repo)
    } catch {
       noRepo := InputBox("Repo file " repo " not found. Please provide a new file path:","Repository Not Found")
-      if (noRepo.Result = "Cancel") {
+      if (noRepo.Result == "Cancel" || noRepo.Value=="") {
          MsgBox "Default repository will be used."
          if FileExist("HSR_Master.csv") {
             repo:="HSR_Master.csv"
             IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
          } else {
-            GenerateHSR()
+            GenerateHSR("HSR_Master.csv")
          }
          hsrDup:=1
          LoadGUI()
@@ -350,9 +350,9 @@ ButtonSubmit(*)
                editBar.value:=""
                return
             } else if (lastSub.UsrIn ~= "i)^import>.*") {
-               if (lastSub.UsrIn ~= "i).*html$") {
+               if (lastSub.UsrIn ~= "i).*html`"?$") {
                   ImportChrome()
-               } else if (lastSub.UsrIn ~= "i).*csv$") {
+               } else if (lastSub.UsrIn ~= "i).*csv`"?$") {
                   ImportCSV()
                } else
                   MsgBox "Unsupported format"
@@ -1019,9 +1019,10 @@ ImportChrome(*)
       if (head == "H3") { ; New category
          RegExMatch(currentLine, "<H3 .*>(.*?)</H3>", &catScan)
          thisCat:=catScan[1]
-         if (thisCat == "Bookmarks bar") {
+         if (thisCat = "Bookmarks bar") {
             thisCat :=  " Bookmarks bar"
-         }
+         } else if (thisCat = "Bookmarks Toolbar")
+            thisCat := " Bookmarks Toolbar"
          Loop HSR_Array.Length
          {
             if (thisCat == HSR_Array[A_Index][1]) {
@@ -1152,6 +1153,7 @@ ImportChrome(*)
 ImportCSV(*)
 {
    global repo
+   newCSVLines:=[]
    replace:=0
    search:=StrSplit(editBar.value,">",,2)
    newCSVPath:=Trim(search[2],'"')
@@ -1191,12 +1193,13 @@ NewRepo(*)
 {
    global repo
    search:=StrSplit(editBar.value,">",,2)
-   if(search[2]=="")
+   if(search[2]=="") {
       newRepo:="HSR_Master.csv"
-   else if (search[2]~="i).*csv$")
+   } else if (search[2]~="i).*csv$") {
       newRepo:=search[2]
-   else
+   }else {
       newRepo:=search[2] ".csv"
+   }
 
    if FileExist(newRepo) {
       MsgBox newRepo " already exists. The file will be loaded."
@@ -1206,7 +1209,7 @@ NewRepo(*)
 
    repo := newRepo
    IniWrite newRepo, "HS_Settings.ini", "Settings", "Repository"
-   GenerateHSR()
+   GenerateHSR(repo)
 }
 
 ;;;;; FAVORITES BAR
@@ -1272,9 +1275,9 @@ EditFav(*)
 
 helpLinks(choice*)
 {
-   if (choice=="Support and updates")
+   if (choice[1]="Support and updates")
       Run "https://github.com/JSSatchell/HyperSearch"
-   else if (choice=="Open source folder")
+   else if (choice[1]="Open source folder")
       Run A_WorkingDir
    DestroyGui()
 }
@@ -1509,15 +1512,18 @@ Repository=HSR_Master.csv
    )", "HS_Settings.ini"
 }
 
-GenerateHSR(*)
+GenerateHSR(hsrFile*)
 {
    global repo
+   if (hsrFile[1]~="i).*csv$") 
+      repo:=hsrFile[1]
+   else
+      repo:=hsrFile[1] ".csv"
    FileAppend "
    (
 " Quick Access","[<Quick Start Guide>](*)"
 "Quick Start Guide","[NAVIGATION REFERENCE](https://github.com/JSSatchell/HyperSearch#navigation)[Press Space to search the category index on the left]()[Tab between control windows]()[Press Enter after typing Space to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE](https://github.com/JSSatchell/HyperSearch#adding--removing-categories--links)[Edit Favorites - 'Favorite#>Label>URL'](https://github.com/JSSatchell/HyperSearch#update-favorites)[Add Index Category - 'Category Name+']()[Add link - '+Link Name+Link URL']()[Add at Position - '+Position#+Link Name+LinkURL']()[Remove Selected Link - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete-Category']()[ ]()[SETTINGS](https://github.com/JSSatchell/HyperSearch#update-the-settings)[Min/Max Mode - 'Set>Min/Max']()[Dark/Light Mode - 'Set>Dark/Light']()[Transparency - 'Set>Opacity>Percentage']()[]()[CLICK HERE for full feature list & updates](https://github.com/JSSatchell/HyperSearch)"
-   )", "HSR_Master.csv"
-   repo:="HSR_Master.csv"
+   )", repo
    IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
 }
 
