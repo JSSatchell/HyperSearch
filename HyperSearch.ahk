@@ -22,7 +22,7 @@ if (ProgID = "BraveHTML")
    Browser := "brave.exe"
 
 ; Initialize global variables
-version:="0.2.1"
+version:="0.2.2"
 index:=1
 lastIndex:=1
 lastLinkIndex:=1
@@ -32,7 +32,6 @@ todayQuick := FormatTime(, "yyMMdd")
 controlColor := ""
 urlTxtColor := ""
 guiFont := ""
-themeSel := ""
 UsrIn := ""
 linkArray := []
 linkString := ""
@@ -55,9 +54,11 @@ minMode := IniRead("HS_Settings.ini", "Settings", "MinMode")
 currentGui := minMode = 1 ? "LiteGui" : "MainGui"
 
 ; Check for repo file
-if !FileExist(repo) {
+if !FileExist(repo)
    GenerateHSR("HSR_Master.csv")
-}
+
+Loop Files, repo
+   repoName := A_LoopFileName
 
 ; Initialize GUI variables
 MainGui := Gui()
@@ -173,7 +174,6 @@ LoadGUI(*)
    }
    %currentGui%.OnEvent("Close", destroyGui)
    %currentGui%.OnEvent("Escape", destroyGui)
-
 }
 
 BuildLiteGUI(*)
@@ -1173,6 +1173,7 @@ ImportCSV(*)
 LoadRepo(path*)
 {
    global repo
+   global repoName
    if (path.Has(1)) {
       repoIn:=path[1]
    } else {
@@ -1183,7 +1184,10 @@ LoadRepo(path*)
    }
 
    if FileExist(repoIn) {
-      repo:=repoIn
+      Loop Files, repoIn {
+         repoName:=A_LoopFileName
+         repo:=A_LoopFilePath
+      }
       IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
    } else {
       MsgBox "Specified file could not be found.`n" repoIn
@@ -1193,6 +1197,7 @@ LoadRepo(path*)
 NewRepo(*)
 {
    global repo
+   global repoName
    search:=StrSplit(editBar.value,">",,2)
    if(search[2]=="") {
       newRepo:="HSR_Master.csv"
@@ -1208,9 +1213,13 @@ NewRepo(*)
       return
    }
 
-   repo := newRepo
-   IniWrite newRepo, "HS_Settings.ini", "Settings", "Repository"
-   GenerateHSR(repo)
+   GenerateHSR(newRepo)
+
+   Loop Files, newRepo {
+      repoName:=A_LoopFileName
+      repo:=A_LoopFilePath
+   }
+   IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
 }
 
 ;;;;; FAVORITES BAR
@@ -1220,6 +1229,8 @@ LoadMenu(*)
    global MainMenu := MenuBar()
    global ExitMenu := Menu()
    global HelpMenu := Menu()
+   global repo
+   global repoName
    i:=1
    while i <= 9 {
       favKey := "Favorite" . i
@@ -1231,7 +1242,8 @@ LoadMenu(*)
    ExitMenu.Add("Close Window", DestroyGui)
    ExitMenu.Add("Exit App", ExitAppFunc)
    HelpMenu.Add("Support and updates", helpLinks)
-   HelpMenu.Add("Open source folder", helpLinks)
+   HelpMenu.Add(repoName, helpLinks)
+   HelpMenu.Add("v" version,helpLinks)
    MainMenu.Add("[&?]", HelpMenu, "+right")
    MainMenu.Add("[&X]", ExitMenu, "+right")
 }
@@ -1273,13 +1285,18 @@ EditFav(*)
    DestroyGui()
 }
 
-
 helpLinks(choice*)
 {
    if (choice[1]="Support and updates")
       Run "https://github.com/JSSatchell/HyperSearch"
-   else if (choice[1]="Open source folder")
-      Run A_WorkingDir
+   else if (choice[1]=repoName) {
+      if (repo!=repoName) {
+         repoPath := RTrim(repo,repoName)
+         Run repoPath
+      } else
+         Run A_WorkingDir
+   } else if (choice[1]="v" version)
+      run A_WorkingDir
    DestroyGui()
 }
 
@@ -1517,13 +1534,10 @@ Repository=HSR_Master.csv
    )", "HS_Settings.ini"
 }
 
-GenerateHSR(hsrFile*)
+GenerateHSR(hsrFile)
 {
    global repo
-   if (hsrFile[1]~="i).*csv$") 
-      repo:=hsrFile[1]
-   else
-      repo:=hsrFile[1] ".csv"
+   repo:=hsrFile
    FileAppend "
    (
 " Quick Access","[<Quick Start Guide>](*)"
