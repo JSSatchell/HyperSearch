@@ -76,13 +76,17 @@ Type a `#` followed by a number to highlight the link in the specified position.
 
     #10
 
+Type `#v` to highlight the last link in the current category.
+
+    #v
+
 `Alt`+`A` and `Alt`+`D` will also toggle between the two listboxes, skipping the search bar.
 
 If one of the listboxes is active, `Alt`+`W` and `Alt`+`S` will toggle the slection up and down, respectively.
 
-If the search bar is active, `Alt` + `S` will activate the links window and start cycling down through the links.
+If the search bar is active, `Alt`+`S` or `Alt`+`W` will activate the links window and start cycling down through the links.
 
-Also with the search bar active, `Alt` + `Q` will clear all of the current text so a new search can be started more quickly.
+Also with the search bar active, `Alt`+`Q` will clear all of the current text so a new search can be started more quickly.
 
 [^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
 
