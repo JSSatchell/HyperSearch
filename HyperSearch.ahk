@@ -97,7 +97,7 @@ LocalHotkeysOff()
    if (currentControl~="ListBox") {
       send "{up}"
    } else if (currentControl=="Edit") {
-      send "{tab}"
+      send "+{tab}{up}"
    } else
       send "!a"
 }
@@ -458,16 +458,20 @@ InputAlgorithm(*)
       } else if(RegExMatch(editBar.value, "^#.+"))
          {
             try {
-               try {
-                  usrIndex := Integer(SubStr(editBar.value,2))
-                  if (usrIndex>linkArray.length)
-                     usrIndex:=linkArray.length
-                  linksListbox.choose(usrIndex)
+               if(RegExMatch(editBar.value, "^#v.*")) {
+                  linksListbox.choose(linkArray.length)
                   lastLinkIndex:=linksListbox.value
-               } catch {
-                  linksListbox.choose(SubStr(editBar.value,2))
+               } else {
+                  try {
+                     usrIndex := Integer(SubStr(editBar.value,2))
+                     if (usrIndex>linkArray.length)
+                        usrIndex:=linkArray.length
+                     linksListbox.choose(usrIndex)
+                     lastLinkIndex:=linksListbox.value
+                  } catch {
+                     linksListbox.choose(SubStr(editBar.value,2))
+                  }
                }
-               
                SetLinkHighlight()
             } catch {
                sleep 50
@@ -629,6 +633,14 @@ AppendLinks(*)
          }
       }
       lastLinkIndex := linkIndex
+      if (linkIndex>linkArray.length) {
+         diff := linkIndex - linkArray.length
+         i:=1
+         while i<= diff {
+            linkArray.InsertAt(0,["",""])
+            i++
+         }
+      }
       if (linkTxt[3] != "" && linkTxt.Has(4)) {
          cleanLabel := CleanLabels(linkTxt[3])
          linkArray.InsertAt(linkIndex,[cleanLabel,linkTxt[4]]) ; Insert at specified position
