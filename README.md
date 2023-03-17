@@ -112,7 +112,7 @@ To add a link at the bottom of the links list, substitute `v` for the position v
 
     +v+GDrive+drive.google.com
     
-To move a link to a new position, type the starting position of the link, followed by `~` and the new positon of the link
+To move a link to a new position, type the starting position of the link, followed by `~` and the new position of the link
 
     1~5
 
