@@ -4,7 +4,7 @@
 if FileExist("HyperSearch.ico")
    TraySetIcon("HyperSearch.ico")
 else
-   TraySetIcon "shell32.dll", 210
+   TraySetIcon "shell32.dll", 210 ; Magnifying glass
 
 SendMode "Input"  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir A_ScriptDir  ; Ensures a consistent starting directory.
@@ -22,7 +22,7 @@ if (ProgID = "BraveHTML")
    Browser := "brave.exe"
 
 ; Initialize global variables
-version:="0.2.2"
+version:="0.2.3"
 index:=1
 lastIndex:=1
 lastLinkIndex:=1
@@ -167,6 +167,7 @@ LoadGUI(*)
    DestroyGUI()
    minMode := IniRead("HS_Settings.ini", "Settings", "MinMode")
    global currentGui := minMode = 1 ? "LiteGui" : "MainGui"
+   LoadMenu()
    if (minMode == 1) { ; Activate minimal UI
       BuildLiteGUI()
    } else { ; Activate main UI
@@ -178,7 +179,6 @@ LoadGUI(*)
 
 BuildLiteGUI(*)
 {
-   LoadMenu()
    Hotkey "LButton", "on"
    global LiteGui := Gui("-Caption +ToolWindow -SysMenu","HyperSearch Lite")
    SetTheme()
@@ -196,7 +196,6 @@ BuildMainGUI(*)
 {
    ; Initially Generated Using SmartGUI Creator 4.0
    global guiReload:=1
-   LoadMenu()
    LocalHotkeysOn()
    global lastIndex
    global lastLinkIndex
@@ -330,7 +329,7 @@ ButtonSubmit(*)
       if (activeControl == linksListbox) {
          if (linkArray[linksListbox.value][2] == "*") {
             linkLabel:=linkArray[linksListbox.value][1]
-            RegExMatch(linkLabel, "<(.*?)>", &match)
+            RegExMatch(linkLabel, "<(.*?)>", &match) ; Open category via crosslink
             try {
                ControlChooseString match[1], catListbox
             } catch {
@@ -345,7 +344,7 @@ ButtonSubmit(*)
          linksListbox.Focus()
       } else if (activeControl == editBar || activeControl == submitButton) {
          if (lastSub.UsrIn != ""){
-            if (lastSub.UsrIn ~= "^ .*" || editBar.value ~= "^#.*") {
+            if (lastSub.UsrIn ~= "^ .*" || editBar.value ~= "^#.*") { ; Set focus to links listbox without opening link
                lastLinkIndex:=SubStr(editBar.value,2)
                linksListbox.focus()
                editBar.value:=""
@@ -422,6 +421,7 @@ ButtonSubmit(*)
          }
       }
    }
+   ; Commands that can be activated via Lite GUI as well as Main GUI
    if (RegExMatch(lastSub.UsrIn, "^[1-9]>.*")){
       mouseKeep:=1
       EditFav()
@@ -448,14 +448,14 @@ InputAlgorithm(*)
    global lastLinkIndex
    global linkArray
    if (minMode == 0) {
-      if(RegExMatch(editBar.value, "^ .+"))
+      if(RegExMatch(editBar.value, "^ .+")) ; Search category list
       {
          try {
             ControlChooseString SubStr(editBar.value,2), catListbox
          } catch {
             sleep 50
          }
-      } else if(RegExMatch(editBar.value, "^#.+"))
+      } else if(RegExMatch(editBar.value, "^#.+")) ; Highlight for specified link position
          {
             try {
                if(RegExMatch(editBar.value, "^#v.*")) {
@@ -1274,13 +1274,20 @@ FavButton(favName, favPos, FavMenu)
 EditFav(*)
 {
    MainMenu.Delete()
-   indx:=SubStr(editBar.value,1,1)
+   try {
+      indx:=Integer(SubStr(editBar.value,1,1))
+   } catch {
+      MsgBox "Invalid index."
+   }
    val := StrSplit(editBar.value,">",,3)
-   newLnk := val[3]
-   if (val[2] != "" || val[3] != "") {
+   if (val.Has(3))
+      newLnk := val[3]
+   else
+      newLnk:=""
+   if (val[2] != "" || newLnk != "") {
       newLbl := "&" . indx . " " . val[2]
       if (val[2] != ""){
-         if (val[3] = "")
+         if (newLnk = "")
             MsgBox "Favorite " . indx . " is now labelled " . LTrim(newLbl,"&" . indx . " ") . ".", "Favorite Reassigned"
          else
             MsgBox "Favorite " . indx . " is now labelled " . LTrim(newLbl,"&" . indx . " ") . " and links to " . newLnk . ".", "Favorite Reassigned"
@@ -1290,9 +1297,9 @@ EditFav(*)
       newLbl:=""
       MsgBox "Favorite " . indx . " has been removed.","Favorite Erased"
    }
-   if (val[2] = "" && val[3] = "" || val[2] != "")
+   if (val[2] = "" && newLnk = "" || val[2] != "")
       IniWrite newLbl, "HS_Settings.ini", "Favorite Labels", "Favorite" indx
-   if (val[2] = "" && val[3] = "" || val[3] != "")
+   if (val[2] = "" && newLnk = "" || newLnk != "")
       IniWrite newLnk, "HS_Settings.ini", "Favorite Links", "FavLink" indx
    DestroyGui()
 }
