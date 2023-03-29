@@ -1,3 +1,6 @@
+; JSSatchell 2023
+; https://github.com/JSSatchell/HyperSearch
+
 #Requires AutoHotkey v2.0
 
 ; Set icon
@@ -332,6 +335,8 @@ ButtonSubmit(*)
             RegExMatch(linkLabel, "<(.*?)>", &match) ; Open category via crosslink
             try {
                ControlChooseString match[1], catListbox
+               ;editBar.value:=""
+               return
             } catch {
                MsgBox 'Category "' match[1] '" not found.'
                return
@@ -633,14 +638,6 @@ AppendLinks(*)
          }
       }
       lastLinkIndex := linkIndex
-      if (linkIndex>linkArray.length) {
-         diff := linkIndex - linkArray.length
-         i:=1
-         while i<= diff {
-            linkArray.InsertAt(0,["",""])
-            i++
-         }
-      }
       if (linkTxt[3] != "" && linkTxt.Has(4)) {
          cleanLabel := CleanLabels(linkTxt[3])
          linkArray.InsertAt(linkIndex,[cleanLabel,linkTxt[4]]) ; Insert at specified position
@@ -654,6 +651,15 @@ AppendLinks(*)
             MsgBox linkArray[linkIndex][1] . " now links to " . linkArray[linkIndex][2]
          }
       } else if (!linkTxt.Has(4)) {
+         if (linkIndex>linkArray.length) {
+            diff := linkIndex - linkArray.length
+            i:=1
+            while i<= diff {
+               linkArray.InsertAt(0,["",""])
+               i++
+            }
+         }
+         lastLinkIndex := linkIndex
          oldLabel:=linkArray[linkIndex][1]
          cleanLabel := CleanLabels(linkTxt[3])
          linkArray[linkIndex][1]:=cleanLabel ; Update label at position
