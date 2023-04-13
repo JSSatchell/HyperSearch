@@ -1,5 +1,7 @@
 # HyperSearch
-Instant internet search, minus the distractions.
+Instant internet search and link managment.
+
+A human-intelligence personal internet catalog. No feeds, no suggestions, no ads.
 
 In video editor language: It's [FX Console](https://www.videocopilot.net/tutorials/fx_console_plugin/?vc=true)/[Excalibur](https://knightsoftheeditingtable.com/excalibur) for the internet.
 
