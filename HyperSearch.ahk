@@ -25,7 +25,7 @@ if (ProgID = "BraveHTML")
    Browser := "brave.exe"
 
 ; Initialize global variables
-version:="0.2.3"
+version:="0.3.1"
 lastIndex:=1
 lastLinkIndex:=1
 mouseKeep:=0
@@ -262,7 +262,10 @@ BuildHSRArray(*)
             repo:=noRepo.value
          else
             repo:=noRepo.value ".csv"
-         IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
+         LoadRepo(repo)
+         hsrDup:=1
+         LoadGUI()
+         hsrDup:=0
       }
       HSR_String := FileRead(repo)
    }
