@@ -62,9 +62,9 @@ currentGui := minMode = 1 ? "LiteGui" : "MainGui"
 ; Check for repo file
 if !FileExist(repo) {
    if (sMode == "web")
-      GenerateHSR("HSR_Master.csv")
+      GenerateHSR("HSR_Master.csv",1)
    else if (sMode == "dir")
-      GenerateHER("HER_Master.csv")
+      GenerateHSR("HER_Master.csv",2)
 }
 
 Loop Files, repo
@@ -215,9 +215,9 @@ BuildMainGUI(*)
    global catListbox := MainGui.Add("ListBox", "vIndex x10 y10 w140 h315 0x100 VScroll sort -AltSubmit Background" controlColor " " guiFont)
    global linksListbox := MainGui.Add("ListBox", "vLink x160 y45 w280 h280 0x100 AltSubmit Background" controlColor " " guiFont)
    global submitButton := MainGui.Add("Button", "Default x390 y10 w50 h20 -Tabstop", "Submit")
-   global urlTextGui := MainGui.Add("Text", "x10 y330 w430 " urlTxtColor, urlDisplay)
+   global urlTextGui := MainGui.Add("Text", "x10 y330 w430 -Wrap " urlTxtColor, urlDisplay)
    MainGui.MenuBar := MainMenu
-   if (hsrDup=0)
+   if (hsrDup==0)
       BuildHSRArray()
    submitButton.OnEvent("Click", ButtonSubmit)
    editBar.OnEvent("Change", InputAlgorithm)
@@ -229,9 +229,9 @@ BuildMainGUI(*)
    finalXY := SetMonitorBounds(h, w)
    MainGui.Show("h" h " w" w " x" finalXY[1] " y" finalXY[2])
    ControlChooseIndex lastIndex, catListbox
-   try {
-      linksListbox.Choose(lastLinkIndex)
-   }
+   try linksListbox.Choose(lastLinkIndex)
+   catch
+      linksListbox.Choose(1)
    SetLinkHighlight()
    guiReload:=0
 }
@@ -242,6 +242,7 @@ BuildHSRArray(*)
    indexList:=""
    global repo
    global hsrDup
+   global sMode
    try {
       HSR_String := FileRead(repo)
    } catch {
@@ -249,10 +250,13 @@ BuildHSRArray(*)
       if (noRepo.Result == "Cancel" || noRepo.Value=="") {
          MsgBox "Default repository will be used."
          if FileExist("HSR_Master.csv") {
-            repo:="HSR_Master.csv"
+            repo:= sMode = "web" ? "HSR_Master.csv" : "HER_Master.csv"
             IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
          } else {
-            GenerateHSR("HSR_Master.csv")
+            if (sMode=="web")
+               GenerateHSR("HSR_Master.csv",1)
+            else if (sMode=="dir")
+               GenerateHSR("HER_Master.csv",2)
          }
          hsrDup:=1
          LoadGUI()
@@ -300,7 +304,7 @@ webSearch(searchQuery,override)
       if (searchQuery != "" && searchQuery != " "){
          try {
             if FileExist("C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe") {
-               Run 'C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe /CMD Go "' searchQuery '" NEWTAB=findexisting OPENINDUAL'
+               Run 'C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe /acmd Go "' searchQuery '" NEWTAB=findexisting OPENINDUAL'
                if WinExist("ahk_exe dopus.exe")
                   WinActivate "ahk_exe dopus.exe"
             } else
@@ -379,24 +383,6 @@ ButtonSubmit(*)
                lastLinkIndex:=SubStr(editBar.value,2)
                linksListbox.focus()
                editBar.value:=""
-               return
-            } else if (lastSub.UsrIn ~= "i)^mode>.*") {
-               modeIn:=StrSplit(lastSub.UsrIn,">",,2)
-               if (modeIn.Has(2)) {
-                  if (modeIn[2] ~= "i)w.{0,2}")
-                     IniWrite "web", "HS_Settings.ini", "Settings","SearchMode"
-                  else if (modeIn[2] ~= "i)file")
-                     IniWrite "dir", "HS_Settings.ini", "Settings","SearchMode"
-         
-                  global sMode := IniRead("HS_Settings.ini", "Settings", "SearchMode")
-                  global modeTxt := sMode = "web" ? "Web Mode: " : "File Mode: "
-                  global repo := sMode = "web" ? IniRead("HS_Settings.ini", "Settings", "Repository") : IniRead("HS_Settings.ini", "Settings", "DirRepo")
-                  LoadRepo(repo)
-                  ;SetLinkHighlight()
-               } else
-                  MsgBox 'Please enter either "Web" or "Directory".'
-               DestroyGui(1)
-               LoadGui()
                return
             } else if (lastSub.UsrIn ~= "i)^import>.*") {
                if (lastSub.UsrIn ~= "i).*html`"?$") {
@@ -537,6 +523,7 @@ CopyLink(*)
       Send "^c"
       hotkey "^c", "on"
    }
+   DestroyGui(0)
 }
 
 LoadLinks(prev*)
@@ -1261,13 +1248,13 @@ LoadRepo(path*)
 NewRepo(*)
 {
    global repo
-   global repoName
+   global sMode
    search:=StrSplit(editBar.value,">",,2)
    if(search[2]=="") {
       newRepo:="HSR_Master.csv"
    } else if (search[2]~="i).*csv$") {
       newRepo:=search[2]
-   }else {
+   } else {
       newRepo:=search[2] ".csv"
    }
 
@@ -1277,13 +1264,15 @@ NewRepo(*)
       return
    }
 
-   GenerateHSR(newRepo)
+   if (sMode == "web")
+      GenerateHSR(newRepo,1)
+   else if (sMode == "dir")
+      GenerateHSR(newRepo,2)
 
    Loop Files, newRepo {
-      repoName:=A_LoopFileName
+      global repoName:=A_LoopFileName
       repo:=A_LoopFilePath
    }
-   IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
 }
 
 ;;;;; FAVORITES BAR
@@ -1293,11 +1282,13 @@ LoadMenu(*)
    global MainMenu := MenuBar()
    global ExitMenu := Menu()
    global HelpMenu := Menu()
-   global repo
    global repoName
+   global minMode
+   global sMode
    i:=1
-   while i <= 9 {
-      favKey := "Favorite" . i
+   favMax := minMode = 1 ? 5 : 9
+   while i <= favMax {
+      favKey := "Favorite" i
       currentFav := IniRead("HS_Settings.ini", "Favorite Labels", favKey)
       if (currentFav != "")
          MainMenu.Add(currentFav, FavButton)
@@ -1308,8 +1299,10 @@ LoadMenu(*)
    HelpMenu.Add("Support and updates", helpLinks)
    HelpMenu.Add(repoName, helpLinks)
    HelpMenu.Add("v" version,helpLinks)
-   MainMenu.Add("[&?]", HelpMenu, "+right")
-   MainMenu.Add("[&X]", ExitMenu, "+right")
+   if (minMode == 0)
+      MainMenu.Add("&!", SwapMode, "+right")
+   MainMenu.Add("&?", HelpMenu, "+right")
+   MainMenu.Add("&X", ExitMenu, "+right")
 }
 
 FavButton(favName, favPos, FavMenu)
@@ -1484,6 +1477,24 @@ SetTheme(*)
    WinSetTransparent opSel
 }
 
+SwapMode(*)
+{
+   global sMode
+   if (sMode=="dir")
+      IniWrite "web", "HS_Settings.ini", "Settings","SearchMode"
+   else if (sMode == "web")
+      IniWrite "dir", "HS_Settings.ini", "Settings","SearchMode"
+
+   global sMode := IniRead("HS_Settings.ini", "Settings", "SearchMode")
+   global modeTxt := sMode = "web" ? "Web Mode: " : "File Mode: "
+   global repo := sMode = "web" ? IniRead("HS_Settings.ini", "Settings", "Repository") : IniRead("HS_Settings.ini", "Settings", "DirRepo")
+   LoadRepo(repo)
+   global mouseKeep := 1
+   DestroyGui(1)
+   LoadGUI()
+   mouseKeep := 0
+}
+
 ;;;;; MOUSE HOTKEYS
 
 ClickOff(ThisHotkey)
@@ -1610,28 +1621,25 @@ SearchMode=web
    )", "HS_Settings.ini"
 }
 
-GenerateHSR(hsrFile)
+GenerateHSR(hsrFile,kind)
 {
    global repo
    repo:=hsrFile
-   FileAppend "
-   (
+   if (kind==1) {
+      FileAppend "
+      (
 " Quick Access","[<Quick Start Guide>](*)"
 "Quick Start Guide","[NAVIGATION REFERENCE](https://github.com/JSSatchell/HyperSearch#navigation)[Press Space to search the category index on the left]()[Tab between control windows]()[Press Enter after typing Space to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE](https://github.com/JSSatchell/HyperSearch#adding--removing-categories--links)[Edit Favorites - 'Favorite#>Label>URL'](https://github.com/JSSatchell/HyperSearch#update-favorites)[Add Index Category - 'Category Name+']()[Add link - '+Link Name+Link URL']()[Add at Position - '+Position#+Link Name+LinkURL']()[Remove Selected Link - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete-Category']()[ ]()[SETTINGS](https://github.com/JSSatchell/HyperSearch#update-the-settings)[Min/Max Mode - 'Set>Min/Max']()[Dark/Light Mode - 'Set>Dark/Light']()[Transparency - 'Set>Opacity>Percentage']()[]()[CLICK HERE for full feature list & updates](https://github.com/JSSatchell/HyperSearch)"
-   )", repo
-   IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
-}
-
-GenerateHER(herFile)
-{
-   global repo
-   repo:=herFile
-   FileAppend "
-   (
+      )", repo
+      IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
+   } else if (kind==2){
+      FileAppend "
+      (
 " Quick Access","[<Quick Start Guide>](*)"
 "Quick Start Guide","[NAVIGATION REFERENCE]()[Press Space to search the category index on the left]()[Tab between control windows]()[Press Enter after typing Space to set focus to links]()[Use Enter or double click labels to activate path]()[ ]()[TEXT ENTRY REFERENCE]()[Edit Favorites - 'Favorite#>Label>URL']()[Add Index Category - 'Category Name+']()[Add file/folder - '+File/folder Name+Path']()[Add at Position - '+Position#+File/Folder Name+Path']()[Remove Selected File/Folder Reference - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete-Category']()[ ]()[SETTINGS]()[Min/Max Mode - 'Set>Min/Max']()[Dark/Light Mode - 'Set>Dark/Light']()[Transparency - 'Set>Opacity>Percentage']()[]()[CLICK HERE for full feature list & updates]()"
-   )", repo
-   IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
+      )", repo
+      IniWrite repo, "HS_Settings.ini", "Settings", "DirRepo"
+   }
 }
 
 ;;;;; UTILITY
