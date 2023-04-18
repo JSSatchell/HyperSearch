@@ -25,7 +25,7 @@ if (ProgID = "BraveHTML")
    Browser := "brave.exe"
 
 ; Initialize global variables
-version:="0.3.1"
+version:="0.3.0"
 lastIndex:=1
 lastLinkIndex:=1
 mouseKeep:=0
@@ -54,7 +54,7 @@ hiHotkey := IniRead("HS_Settings.ini", "Settings", "HighlightHotkey")
 jump := IniRead("HS_Settings.ini", "Settings", "jump")
 sMode := IniRead("HS_Settings.ini", "Settings", "SearchMode")
 repo := sMode = "web" ? IniRead("HS_Settings.ini", "Settings", "Repository") : IniRead("HS_Settings.ini", "Settings", "DirRepo")
-modeTxt := sMode = "web" ? "Web Mode: " : "Directory Mode: "
+modeTxt := sMode = "web" ? "Web Mode: " : "File Mode: "
 urlDisplay := modeTxt
 minMode := IniRead("HS_Settings.ini", "Settings", "MinMode")
 currentGui := minMode = 1 ? "LiteGui" : "MainGui"
@@ -385,11 +385,11 @@ ButtonSubmit(*)
                if (modeIn.Has(2)) {
                   if (modeIn[2] ~= "i)w.{0,2}")
                      IniWrite "web", "HS_Settings.ini", "Settings","SearchMode"
-                  else if (modeIn[2] ~= "i)dir.{0,6}")
+                  else if (modeIn[2] ~= "i)file")
                      IniWrite "dir", "HS_Settings.ini", "Settings","SearchMode"
          
                   global sMode := IniRead("HS_Settings.ini", "Settings", "SearchMode")
-                  global modeTxt := sMode = "web" ? "Web Mode: " : "Directory Mode: "
+                  global modeTxt := sMode = "web" ? "Web Mode: " : "File Mode: "
                   global repo := sMode = "web" ? IniRead("HS_Settings.ini", "Settings", "Repository") : IniRead("HS_Settings.ini", "Settings", "DirRepo")
                   LoadRepo(repo)
                   ;SetLinkHighlight()
@@ -637,10 +637,10 @@ AppendLinks(*)
          FileAppend appendTxt, repo
          ;return
       } else if (SubStr(lastSub.UsrIn,-2) == "++") { ; Rename current category
-         MsgBox "Double ++"
          Loop HSR_Array.Length
          {
-            if (catListbox.value==A_Index) {
+            MsgBox lastSub.Index "`n" HSR_Array[A_Index][1]
+            if (lastSub.Index=HSR_Array[A_Index][1]) {
                HSR_Array[A_Index][1]:=linkTxt[1] ; Add cell text to array
                MsgBox "Category " . lastSub.Index . " has been renamed to " . linkTxt[1] . "."
                SaveHSR()
@@ -648,7 +648,6 @@ AppendLinks(*)
             }
          }
       } else if (SubStr(lastSub.UsrIn,-1) == "+") { ; Add category with blank first entry
-         MsgBox "Single +"
          appendTxt:= '`n"' . linkTxt[1] . '",' . '"[ ]()"'
          FileAppend appendTxt, repo
       } else {
