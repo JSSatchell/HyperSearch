@@ -26,11 +26,9 @@ if (ProgID = "BraveHTML")
 
 ; Initialize global variables
 version:="0.2.3"
-index:=1
 lastIndex:=1
 lastLinkIndex:=1
 mouseKeep:=0
-urlDisplay:=""
 todayQuick := FormatTime(, "yyMMdd")
 controlColor := ""
 urlTxtColor := ""
@@ -38,6 +36,8 @@ guiFont := ""
 UsrIn := ""
 linkArray := []
 linkString := ""
+mouseX:=""
+mouseY:=""
 hsrDup:=0
 guiReload:=1
 
@@ -52,13 +52,20 @@ searchEngine := IniRead("HS_Settings.ini", "Search Engine", "Default")
 GUIHotkey := IniRead("HS_Settings.ini", "Settings", "GUIHotkey")
 hiHotkey := IniRead("HS_Settings.ini", "Settings", "HighlightHotkey")
 jump := IniRead("HS_Settings.ini", "Settings", "jump")
-repo := IniRead("HS_Settings.ini", "Settings", "Repository")
+sMode := IniRead("HS_Settings.ini", "Settings", "SearchMode")
+repo := sMode = "web" ? IniRead("HS_Settings.ini", "Settings", "Repository") : IniRead("HS_Settings.ini", "Settings", "DirRepo")
+modeTxt := sMode = "web" ? "Web Mode: " : "Directory Mode: "
+urlDisplay := modeTxt
 minMode := IniRead("HS_Settings.ini", "Settings", "MinMode")
 currentGui := minMode = 1 ? "LiteGui" : "MainGui"
 
 ; Check for repo file
-if !FileExist(repo)
-   GenerateHSR("HSR_Master.csv")
+if !FileExist(repo) {
+   if (sMode == "web")
+      GenerateHSR("HSR_Master.csv")
+   else if (sMode == "dir")
+      GenerateHER("HER_Master.csv")
+}
 
 Loop Files, repo
    repoName := A_LoopFileName
@@ -167,7 +174,7 @@ LocalHotkeysOn()
 
 LoadGUI(*)
 { 
-   DestroyGUI()
+   DestroyGui(0)
    minMode := IniRead("HS_Settings.ini", "Settings", "MinMode")
    global currentGui := minMode = 1 ? "LiteGui" : "MainGui"
    LoadMenu()
@@ -283,24 +290,40 @@ BuildHSRArray(*)
 
 ;;;;; SEARCH FUNCTIONS
 
-webSearch(searchQuery)
+webSearch(searchQuery,override)
 {
-   ;;;;;Adapted from this thread: https://www.autohotkey.com/board/topic/13404-google-search-on-highlighted-text/
-   if (searchQuery != "" && searchQuery != " "){
-      searchQuery := StrReplace(searchQuery, "`n`r", A_Space)
-      searchQuery := Trim(searchQuery)
-      searchQuery := StrReplace(searchQuery, "\", "`%5C")
-      searchQuery := StrReplace(searchQuery, A_Space, "+")
-      searchQuery := StrReplace(searchQuery, "`%", "`%25")
-      If InStr(searchQuery, ".")
-      {
-         If InStr(searchQuery, "+")
-            Run browser " " searchEngine searchQuery  
-         else
-            Run browser " " searchQuery 
-      } else
-         Run browser " " searchEngine searchQuery
-      DestroyGui()
+   global sMode
+   if (sMode == "dir" && override != 1) {
+      if (searchQuery != "" && searchQuery != " "){
+         try {
+            if FileExist("C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe") {
+               Run 'C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe /CMD Go "' searchQuery '" NEWTAB=findexisting OPENINDUAL'
+               if WinExist("ahk_exe dopus.exe")
+                  WinActivate "ahk_exe dopus.exe"
+            } else
+               run searchQuery
+            DestroyGui(0)
+         } catch Error
+            MsgBox "File or folder could not be opened."
+      }
+   } else {
+      ;;;;;Adapted from this thread: https://www.autohotkey.com/board/topic/13404-google-search-on-highlighted-text/
+      if (searchQuery != "" && searchQuery != " "){
+         searchQuery := StrReplace(searchQuery, "`n`r", A_Space)
+         searchQuery := Trim(searchQuery)
+         searchQuery := StrReplace(searchQuery, "\", "`%5C")
+         searchQuery := StrReplace(searchQuery, A_Space, "+")
+         searchQuery := StrReplace(searchQuery, "`%", "`%25")
+         If InStr(searchQuery, ".")
+         {
+            If InStr(searchQuery, "+")
+               Run browser " " searchEngine searchQuery  
+            else
+               Run browser " " searchQuery 
+         } else
+            Run browser " " searchEngine searchQuery
+         DestroyGui(0)
+      }
    }
 }
 
@@ -316,7 +339,7 @@ searchHighlight(ThisHotkey)
       MsgBox "Could not perform search."
       return
    }
-   webSearch(A_Clipboard)
+   webSearch(A_Clipboard,1)
    A_Clipboard := prevClipboard
 }
 
@@ -342,7 +365,7 @@ ButtonSubmit(*)
                return
             }
          } else {
-            webSearch(linkArray[linksListbox.value][2])
+            webSearch(linkArray[linksListbox.value][2],0)
             return
          }
       } else if (activeControl == catListbox) {
@@ -354,6 +377,24 @@ ButtonSubmit(*)
                linksListbox.focus()
                editBar.value:=""
                return
+            } else if (lastSub.UsrIn ~= "i)^mode>.*") {
+               modeIn:=StrSplit(lastSub.UsrIn,">",,2)
+               if (modeIn.Has(2)) {
+                  if (modeIn[2] ~= "i)w.{0,2}")
+                     IniWrite "web", "HS_Settings.ini", "Settings","SearchMode"
+                  else if (modeIn[2] ~= "i)dir.{0,6}")
+                     IniWrite "dir", "HS_Settings.ini", "Settings","SearchMode"
+         
+                  global sMode := IniRead("HS_Settings.ini", "Settings", "SearchMode")
+                  global modeTxt := sMode = "web" ? "Web Mode: " : "Directory Mode: "
+                  global repo := sMode = "web" ? IniRead("HS_Settings.ini", "Settings", "Repository") : IniRead("HS_Settings.ini", "Settings", "DirRepo")
+                  LoadRepo(repo)
+                  ;SetLinkHighlight()
+               } else
+                  MsgBox 'Please enter either "Web" or "Directory".'
+               DestroyGui(1)
+               LoadGui()
+               return
             } else if (lastSub.UsrIn ~= "i)^import>.*") {
                if (lastSub.UsrIn ~= "i).*html`"?$") {
                   ImportChrome()
@@ -361,36 +402,32 @@ ButtonSubmit(*)
                   ImportCSV()
                } else
                   MsgBox "Unsupported format"
-               DestroyGui()
+               DestroyGui(0)
                LoadGui()
                return
             } else if (lastSub.UsrIn ~= "i)^load>.*") {
                LoadRepo()
-               DestroyGui()
-               global lastIndex := 1
-               global lastLinkIndex := 1
+               DestroyGui(1)
                LoadGui()
                return
             } else if (lastSub.UsrIn ~= "i)^new>.*") {
                NewRepo()
-               DestroyGui()
-               global lastIndex := 1
-               global lastLinkIndex := 1
+               DestroyGui(1)
                LoadGui()
                return
             } else if (lastSub.UsrIn ~= "i)^export>cat.{0,5}>h.{0,4}s.{0,5}") {
                ShareCat()
-               DestroyGui()
+               DestroyGui(0)
                Run A_WorkingDir
                return
             } else if (lastSub.UsrIn ~= "i)^export>cat.{0,5}") {
                ExportCat()
-               DestroyGui()
+               DestroyGui(0)
                Run A_WorkingDir
                return
             } else if (lastSub.UsrIn ~= "i)^export>repo.{0,6}") {
                ExportRepo()
-               DestroyGui()
+               DestroyGui(0)
                Run A_WorkingDir
                return
             } else if (lastSub.UsrIn ~= ".*\+.*"){
@@ -421,7 +458,7 @@ ButtonSubmit(*)
                }
             } else {
                searchURL := linkArray[linksListbox.value][2]
-               webSearch(searchURL)
+               webSearch(searchURL,0)
             }
          }
       }
@@ -430,20 +467,20 @@ ButtonSubmit(*)
    if (RegExMatch(lastSub.UsrIn, "^[1-9]>.*")){
       mouseKeep:=1
       EditFav()
-      DestroyGui()
+      DestroyGui(0)
       LoadGUI()
       mouseKeep:=0
    } else if (lastSub.UsrIn ~= "i)^set>.*"){
       mouseKeep:=1
       EditSettings()
-      DestroyGui()
+      DestroyGui(0)
       LoadGUI()
       mouseKeep:=0
    } else {
       if (minMode == 1 && lastSub.UsrIn == "")
             return
       else {
-         webSearch(lastSub.UsrIn)
+         webSearch(lastSub.UsrIn,1)
       }
    }
 }
@@ -507,9 +544,9 @@ LoadLinks(prev*)
    global linkArray := []
    linksListbox.Opt("-Redraw")
    linksListbox.Delete()
-   ;MsgBox lastLinkIndex "`n" prev[1]
    global lastLinkIndex
    global guiReload
+   global urlDisplay
    if (guiReload == 0 && prev[1]==catListbox)
       lastLinkIndex:=1
    Loop HSR_Array.Length
@@ -544,12 +581,7 @@ LoadLinks(prev*)
       linksListbox.Choose(1)
    }
 
-   try {
-      urlDisplay:=linkArray[linksListbox.value][2]
-   } catch {
-      urlDisplay:="undefined"
-   }
-   urlTextGui.value := urlDisplay
+   SetLinkHighlight()
 }
 
 ActivateLinks(*)
@@ -559,16 +591,19 @@ ActivateLinks(*)
       RegExMatch(linkLabel, "<(.*?)>", &match)
       ControlChooseString match[1], catListbox
    } else {
-      webSearch(linkArray[linksListbox.value][2])
+      webSearch(linkArray[linksListbox.value][2],0)
    }
 }
 
 SetLinkHighlight(*)
 {
+   global sMode
+   global urlDisplay
+   global modeTxt
    try {
-      urlDisplay:=linkArray[linksListbox.value][2]
+      urlDisplay := modeTxt . linkArray[linksListbox.value][2]
    } catch {
-      urlDisplay:=""
+      urlDisplay := modeTxt
    }
    urlTextGui.value := urlDisplay
 }
@@ -593,12 +628,13 @@ AppendLinks(*)
          }
       }
       
-      if (linkTxt.Has(2) && linkTxt.Has(3)) { ; Add link in first position
+      if (linkTxt.Has(2) && linkTxt.Has(3) && linkTxt[2] != "") { ; Add link in first position
          cleanLabel := CleanLabels(linkTxt[2])
          appendTxt:= '`n"' . linkTxt[1] . '",' . '"[' . cleanLabel . "](" . linkTxt[3] . ')"'
          FileAppend appendTxt, repo
          ;return
       } else if (SubStr(lastSub.UsrIn,-2) == "++") { ; Rename current category
+         MsgBox "Double ++"
          Loop HSR_Array.Length
          {
             if (catListbox.value==A_Index) {
@@ -609,6 +645,7 @@ AppendLinks(*)
             }
          }
       } else if (SubStr(lastSub.UsrIn,-1) == "+") { ; Add category with blank first entry
+         MsgBox "Single +"
          appendTxt:= '`n"' . linkTxt[1] . '",' . '"[ ]()"'
          FileAppend appendTxt, repo
       } else {
@@ -616,15 +653,18 @@ AppendLinks(*)
       }
       global mouseKeep:=1
       newCat:=linkTxt[1]
-      DestroyGui()
+      DestroyGui(0)
       BuildMainGUI()
       catListbox.Choose(newCat)
       linksListbox.Choose(1)
       mouseKeep:=0
       return
-   } else if (linkIndex == "v") {
+   } else if (linkIndex == "v") { ; Add link in last position
       cleanLabel := CleanLabels(linkTxt[3])
-      linkArray.push([cleanLabel,linkTxt[4]]) ; Add link in last position
+      if (linkTxt.Has(4))
+         linkArray.push([cleanLabel,linkTxt[4]])
+      else
+         linkArray.push([cleanLabel,""])
       lastLinkIndex:=linkArray.length
    } else if IsNumber(linkIndex) ; Position specific Link
    {
@@ -783,7 +823,7 @@ DelCat(*)
    {
       Loop HSR_Array.Length
       {
-         if (lastSub.index==HSR_Array[A_Index][1]) {
+         if (catListbox.value==A_Index) {
             HSR_Array.RemoveAt(A_Index)
             linkArray:=[]
             linkString:=""
@@ -793,7 +833,8 @@ DelCat(*)
       mouseKeep:=1
       linksListbox.Opt("-redraw")
       UpdateLinkList()
-      DestroyGui()
+      DestroyGui(0)
+      global lastIndex-=1
       LoadGUI()
       linksListbox.Opt("+redraw")
       mouseKeep:=0
@@ -1191,7 +1232,7 @@ ImportCSV(*)
 LoadRepo(path*)
 {
    global repo
-   global repoName
+   global sMode
    if (path.Has(1)) {
       repoIn:=path[1]
    } else {
@@ -1203,10 +1244,13 @@ LoadRepo(path*)
 
    if FileExist(repoIn) {
       Loop Files, repoIn {
-         repoName:=A_LoopFileName
+         global repoName:=A_LoopFileName
          repo:=A_LoopFilePath
       }
-      IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
+      if (sMode=="web")
+         IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
+      else if (sMode=="dir")
+         IniWrite repo, "HS_Settings.ini", "Settings", "DirRepo"
    } else {
       MsgBox "Specified file could not be found.`n" repoIn
    }
@@ -1272,8 +1316,8 @@ FavButton(favName, favPos, FavMenu)
    if(URL == "")
       MsgBox "Favorite " . favPos . " is undefined."
    else {
-      webSearch(URL)
-      DestroyGui()
+      webSearch(URL,1)
+      DestroyGui(0)
    }
 }
 
@@ -1307,7 +1351,7 @@ EditFav(*)
       IniWrite newLbl, "HS_Settings.ini", "Favorite Labels", "Favorite" indx
    if (val[2] = "" && newLnk = "" || newLnk != "")
       IniWrite newLnk, "HS_Settings.ini", "Favorite Links", "FavLink" indx
-   DestroyGui()
+   DestroyGui(0)
 }
 
 helpLinks(choice*)
@@ -1322,7 +1366,7 @@ helpLinks(choice*)
          Run A_WorkingDir
    } else if (choice[1]="v" version)
       run A_WorkingDir
-   DestroyGui()
+   DestroyGui(0)
 }
 
 ;;;;; MODIFY SETTINGS
@@ -1446,7 +1490,7 @@ ClickOff(ThisHotkey)
    contID := WinExist("Continue?")
    MouseGetPos ,,&winClick
    if (winClick!=hsID && winClick!=contID && winClick != A_ScriptName) {
-      DestroyGUI()
+      DestroyGui(0)
    }
    Click "Down"
    Keywait A_ThisHotkey
@@ -1475,7 +1519,8 @@ RMenu(ThisHotkey)
 
 CheckSettings(*)
 {
-   global currentVersion
+   global version
+   prevVer := IniRead("HS_Settings.ini", "Version", "CurrentVersion")
    newSettings:=""
    sections := IniRead("HS_Settings.ini")
    sectionsArray:=StrSplit(sections,"`n")
@@ -1508,6 +1553,8 @@ CheckSettings(*)
       newIni:="[Version]`nCurrentVersion=" version "`n`n" oldIni
       FileDelete("HS_Settings.ini")
       FileAppend(newIni,"HS_Settings.ini")
+   } if (prevVer == "0.2.2") {
+      FileAppend("DirRepo=HER_Master.csv`nSearchMode=web","HS_Settings.ini")
    }
 
    IniWrite(version, "HS_Settings.ini","Version","CurrentVersion")
@@ -1556,6 +1603,8 @@ GUIHotkey=#Space
 HighlightHotkey=^#Space
 Jump=1
 Repository=HSR_Master.csv
+DirRepo=HER_Master.csv
+SearchMode=web
    )", "HS_Settings.ini"
 }
 
@@ -1567,6 +1616,18 @@ GenerateHSR(hsrFile)
    (
 " Quick Access","[<Quick Start Guide>](*)"
 "Quick Start Guide","[NAVIGATION REFERENCE](https://github.com/JSSatchell/HyperSearch#navigation)[Press Space to search the category index on the left]()[Tab between control windows]()[Press Enter after typing Space to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE](https://github.com/JSSatchell/HyperSearch#adding--removing-categories--links)[Edit Favorites - 'Favorite#>Label>URL'](https://github.com/JSSatchell/HyperSearch#update-favorites)[Add Index Category - 'Category Name+']()[Add link - '+Link Name+Link URL']()[Add at Position - '+Position#+Link Name+LinkURL']()[Remove Selected Link - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete-Category']()[ ]()[SETTINGS](https://github.com/JSSatchell/HyperSearch#update-the-settings)[Min/Max Mode - 'Set>Min/Max']()[Dark/Light Mode - 'Set>Dark/Light']()[Transparency - 'Set>Opacity>Percentage']()[]()[CLICK HERE for full feature list & updates](https://github.com/JSSatchell/HyperSearch)"
+   )", repo
+   IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
+}
+
+GenerateHER(herFile)
+{
+   global repo
+   repo:=herFile
+   FileAppend "
+   (
+" Quick Access","[<Quick Start Guide>](*)"
+"Quick Start Guide","[NAVIGATION REFERENCE]()[Press Space to search the category index on the left]()[Tab between control windows]()[Press Enter after typing Space to set focus to links]()[Use Enter or double click labels to activate path]()[ ]()[TEXT ENTRY REFERENCE]()[Edit Favorites - 'Favorite#>Label>URL']()[Add Index Category - 'Category Name+']()[Add file/folder - '+File/folder Name+Path']()[Add at Position - '+Position#+File/Folder Name+Path']()[Remove Selected File/Folder Reference - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete-Category']()[ ]()[SETTINGS]()[Min/Max Mode - 'Set>Min/Max']()[Dark/Light Mode - 'Set>Dark/Light']()[Transparency - 'Set>Opacity>Percentage']()[]()[CLICK HERE for full feature list & updates]()"
    )", repo
    IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
 }
@@ -1604,7 +1665,7 @@ CleanLabels(uncleanLabel)
 SetMonitorBounds(guiH, guiW)
 {
    ;;;;;; Adapted from this thread: https://www.autohotkey.com/boards/viewtopic.php?t=54557
-	global mouseX
+   global mouseX
    global mouseY
    ; get the mouse coordinates first
    if (mouseKeep==0) {
@@ -1636,14 +1697,17 @@ SetMonitorBounds(guiH, guiW)
    return [Final_x, Final_y]
 }
 
-DestroyGui(*)
+DestroyGui(reset*)
 {
    LocalHotkeysOff()
-   try {
-      global lastIndex := catListbox.value
-   }
-   try {
-      global lastLinkIndex := linksListbox.value
+   global lastIndex
+   global lastLinkIndex
+   if (reset[1]==1) {
+      lastIndex := 1
+      lastLinkIndex := 1
+   } else {
+      try lastIndex := catListbox.value
+      try lastLinkIndex := linksListbox.value
    }
    HSR_String:=""
    HSR_Array:=""
