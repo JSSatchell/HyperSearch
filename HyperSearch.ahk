@@ -25,7 +25,7 @@ if (ProgID = "BraveHTML")
    Browser := "brave.exe"
 
 ; Initialize global variables
-version:="0.3.0"
+version:="0.3.01"
 lastIndex:=1
 lastLinkIndex:=1
 mouseKeep:=0
@@ -64,7 +64,7 @@ if !FileExist(repo) {
    if (sMode == "web")
       GenerateHSR("HSR_Master.csv",1)
    else if (sMode == "dir")
-      GenerateHSR("HER_Master.csv",2)
+      GenerateHSR("HFR_Master.csv",2)
 }
 
 Loop Files, repo
@@ -249,15 +249,16 @@ BuildHSRArray(*)
       noRepo := InputBox("Repo file " repo " not found. Please provide a new file path:","Repository Not Found")
       if (noRepo.Result == "Cancel" || noRepo.Value=="") {
          MsgBox "Default repository will be used."
-         if FileExist("HSR_Master.csv") {
-            repo:= sMode = "web" ? "HSR_Master.csv" : "HER_Master.csv"
-            IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
-         } else {
-            if (sMode=="web")
+         if (sMode=="web") {
+            if FileExist("HSR_Master.csv") {
+               LoadRepo("HSR_Master.csv")
+            } else
                GenerateHSR("HSR_Master.csv",1)
-            else if (sMode=="dir")
-               GenerateHSR("HER_Master.csv",2)
-         }
+         } else if (sMode=="dir")
+            if FileExist("HFR_Master.csv") {
+               LoadRepo("HFR_Master.csv")
+            } else
+               GenerateHSR("HFR_Master.csv",2)
          hsrDup:=1
          LoadGUI()
          hsrDup:=0
@@ -266,7 +267,15 @@ BuildHSRArray(*)
             repo:=noRepo.value
          else
             repo:=noRepo.value ".csv"
-         LoadRepo(repo)
+         if FileExist(repo) {
+            LoadRepo(repo)
+         } else {
+            MsgBox "No file found at:`n" repo "`n`nA new file will be created."
+            kind := sMode="web" ? 1 : 2
+            GenerateHSR(repo,kind)
+            LoadRepo(repo)
+         }
+         DestroyGui(0)
          hsrDup:=1
          LoadGUI()
          hsrDup:=0
@@ -300,18 +309,31 @@ BuildHSRArray(*)
 webSearch(searchQuery,override)
 {
    global sMode
+   global linkArray
    if (sMode == "dir" && override != 1) {
       if (searchQuery != "" && searchQuery != " "){
-         try {
-            if FileExist("C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe") {
-               Run 'C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe /acmd Go "' searchQuery '" NEWTAB=findexisting OPENINDUAL'
-               if WinExist("ahk_exe dopus.exe")
-                  WinActivate "ahk_exe dopus.exe"
+         searchQuery := Trim(searchQuery,'"')
+         if !FileExist(searchQuery) {
+            searchQuery := FindDrive(subStr(searchQuery,4))
+            if (searchQuery!=false) {
+              reassignMsg := MsgBox("It looks like the file path has changed. Would you like to reassign the path?`n`nOld Path:`n" linkArray[linksListbox.value][2] "`n`nNew path:`n" searchQuery, "Reassign File Path?", 260)
+               If (reassignMsg = "Yes"){
+                  linkArray[linksListbox.value][2] := searchQuery
+                  UpdateLinkList()
+               }
             } else
-               run searchQuery
-            DestroyGui(0)
-         } catch Error
-            MsgBox "File or folder could not be opened."
+               return
+         }
+
+         ;/*
+         if FileExist("C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe") {
+            Run 'C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe /acmd Go "' searchQuery '" NEWTAB=findexisting OPENINDUAL'
+
+            if WinExist("ahk_exe dopus.exe")
+               WinActivate "ahk_exe dopus.exe"
+         } else ;*/
+            Run searchQuery
+         DestroyGui(0)
       }
    } else {
       ;;;;;Adapted from this thread: https://www.autohotkey.com/board/topic/13404-google-search-on-highlighted-text/
@@ -620,13 +642,12 @@ AppendLinks(*)
       
       if (linkTxt.Has(2) && linkTxt.Has(3) && linkTxt[2] != "") { ; Add link in first position
          cleanLabel := CleanLabels(linkTxt[2])
-         appendTxt:= '`n"' . linkTxt[1] . '",' . '"[' . cleanLabel . "](" . linkTxt[3] . ')"'
+         appendTxt:= '`n"' . linkTxt[1] . '",' . '"[' . cleanLabel . "](" . Trim(linkTxt[3],'"') . ')"'
          FileAppend appendTxt, repo
          ;return
-      } else if (SubStr(lastSub.UsrIn,-2) == "++") { ; Rename current category
+      } else if (SubStr(lastSub.UsrIn,-2) = "++") { ; Rename current category
          Loop HSR_Array.Length
          {
-            MsgBox lastSub.Index "`n" HSR_Array[A_Index][1]
             if (lastSub.Index=HSR_Array[A_Index][1]) {
                HSR_Array[A_Index][1]:=linkTxt[1] ; Add cell text to array
                MsgBox "Category " . lastSub.Index . " has been renamed to " . linkTxt[1] . "."
@@ -651,7 +672,7 @@ AppendLinks(*)
    } else if (linkIndex == "v") { ; Add link in last position
       cleanLabel := CleanLabels(linkTxt[3])
       if (linkTxt.Has(4))
-         linkArray.push([cleanLabel,linkTxt[4]])
+         linkArray.push([cleanLabel,Trim(linkTxt[4],'"')])
       else
          linkArray.push([cleanLabel,""])
       lastLinkIndex:=linkArray.length
@@ -668,9 +689,11 @@ AppendLinks(*)
       }
       lastLinkIndex := linkIndex
       if (linkTxt[3] != "" && linkTxt.Has(4)) {
+         linkTxt[4] := Trim(linkTxt[4],'"')
          cleanLabel := CleanLabels(linkTxt[3])
          linkArray.InsertAt(linkIndex,[cleanLabel,linkTxt[4]]) ; Insert at specified position
       } else if (linkTxt[3]=="") {
+         linkTxt[4] := Trim(linkTxt[4],'"')
          if (!linkTxt.Has(4)) {
             linkArray.InsertAt(linkIndex,[linkTxt[3],linkTxt[4]]) 
          } else if (linkTxt[4]=="") {
@@ -696,11 +719,12 @@ AppendLinks(*)
       }
    } else { ; Unspecified position number
       if (linkTxt[2] != "" && linkTxt.Has(3)) {
+         linkTxt[3] := Trim(linkTxt[3],'"')
          cleanLabel := CleanLabels(linkTxt[2])
          linkArray.InsertAt(1,[cleanLabel,linkTxt[3]]) ; Insert in first position
          lastLinkIndex := 1
       } else if (linkTxt[2]=="") {
-         linkArray[linksListbox.value][2]:=linkTxt[3] ; Update URL of current
+         linkArray[linksListbox.value][2]:=Trim(linkTxt[3],'"') ; Update URL of current
          MsgBox linkArray[linksListbox.value][1] . " now links to " . linkArray[linksListbox.value][2]
       } else if (!linkTxt.Has(3)) {
          oldLabel:=linkArray[linksListbox.value][1]
@@ -733,6 +757,8 @@ RemoveLinks(*)
       }
       start:=min(val1,val2)
       stop:=max(val1,val2)
+      if (stop>linkArray.length)
+         stop:=linkArray.length
       lastLinkIndex:=start
       numRemove := stop-start + 1
       i:=start
@@ -812,7 +838,7 @@ DelCat(*)
    {
       Loop HSR_Array.Length
       {
-         if (catListbox.value==A_Index) {
+         if (lastSub.Index=HSR_Array[A_Index][1]) {
             HSR_Array.RemoveAt(A_Index)
             linkArray:=[]
             linkString:=""
@@ -1269,10 +1295,7 @@ NewRepo(*)
    else if (sMode == "dir")
       GenerateHSR(newRepo,2)
 
-   Loop Files, newRepo {
-      global repoName:=A_LoopFileName
-      repo:=A_LoopFilePath
-   }
+   LoadRepo(newRepo)
 }
 
 ;;;;; FAVORITES BAR
@@ -1501,8 +1524,10 @@ ClickOff(ThisHotkey)
 {
    hsID := WinExist("HyperSearch")
    contID := WinExist("Continue?")
+   reassignID := WinExist("Reassign File Path?")
    MouseGetPos ,,&winClick
-   if (winClick!=hsID && winClick!=contID && winClick != A_ScriptName) {
+   if (winClick!=hsID && winClick!=contID && winClick!=reassignID && winClick != A_ScriptName) {
+      Click
       DestroyGui(0)
    }
    Click "Down"
@@ -1533,7 +1558,6 @@ RMenu(ThisHotkey)
 CheckSettings(*)
 {
    global version
-   prevVer := IniRead("HS_Settings.ini", "Version", "CurrentVersion")
    newSettings:=""
    sections := IniRead("HS_Settings.ini")
    sectionsArray:=StrSplit(sections,"`n")
@@ -1563,11 +1587,15 @@ CheckSettings(*)
       IniDelete("HS_Settings.ini", "Settings", "Trans")
       FileAppend("Opacity=" oldOpVal, "HS_Settings.ini")
       oldIni := FileRead("HS_Settings.ini")
-      newIni:="[Version]`nCurrentVersion=" version "`n`n" oldIni
+      newIni:="[Version]`nCurrentVersion=0.2.2`n`n" oldIni
       FileDelete("HS_Settings.ini")
       FileAppend(newIni,"HS_Settings.ini")
-   } if (prevVer == "0.2.2") {
-      FileAppend("DirRepo=HER_Master.csv`nSearchMode=web","HS_Settings.ini")
+   }
+   
+   prevVer := IniRead("HS_Settings.ini", "Version", "CurrentVersion")
+
+   if (prevVer == "0.2.2") {
+      FileAppend("`nDirRepo=HFR_Master.csv`nSearchMode=web","HS_Settings.ini")
    }
 
    IniWrite(version, "HS_Settings.ini","Version","CurrentVersion")
@@ -1616,7 +1644,7 @@ GUIHotkey=#Space
 HighlightHotkey=^#Space
 Jump=1
 Repository=HSR_Master.csv
-DirRepo=HER_Master.csv
+DirRepo=HFR_Master.csv
 SearchMode=web
    )", "HS_Settings.ini"
 }
@@ -1670,6 +1698,19 @@ CleanLabels(uncleanLabel)
    labelReplace := StrReplace(labelReplace, "&#39;", "``")
    labelReplace := StrReplace(labelReplace, "&#150;", "-")
    Return labelReplace
+}
+
+FindDrive(filePath)
+{
+   driveList := DriveGetList()
+   Loop Parse driveList
+   {
+      concatDrive := A_LoopField ":\" filePath
+      if FileExist(concatDrive)
+         return concatDrive
+   }
+   MsgBox "File not found."
+   return false
 }
 
 SetMonitorBounds(guiH, guiW)
