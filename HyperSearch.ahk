@@ -25,7 +25,7 @@ if (ProgID = "BraveHTML")
    Browser := "brave.exe"
 
 ; Initialize global variables
-version:="0.3.01"
+version:="0.3.02"
 lastIndex:=1
 lastLinkIndex:=1
 mouseKeep:=0
@@ -230,8 +230,10 @@ BuildMainGUI(*)
    MainGui.Show("h" h " w" w " x" finalXY[1] " y" finalXY[2])
    ControlChooseIndex lastIndex, catListbox
    try linksListbox.Choose(lastLinkIndex)
-   catch
+   catch {
+      sleep 50
       linksListbox.Choose(1)
+   }
    SetLinkHighlight()
    guiReload:=0
 }
@@ -312,7 +314,7 @@ webSearch(searchQuery,override)
    global linkArray
    if (sMode == "dir" && override != 1) {
       if (searchQuery != "" && searchQuery != " "){
-         searchQuery := Trim(searchQuery,'"')
+         searchQuery := RestoreLinks(searchQuery)
          if !FileExist(searchQuery) {
             searchQuery := FindDrive(subStr(searchQuery,4))
             if (searchQuery!=false) {
@@ -325,13 +327,12 @@ webSearch(searchQuery,override)
                return
          }
 
-         ;/*
-         if FileExist("C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe") {
+         useDopus:=FileExist("C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe") ? 0 : 0
+         if(useDopus=1) {
             Run 'C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe /acmd Go "' searchQuery '" NEWTAB=findexisting OPENINDUAL'
-
             if WinExist("ahk_exe dopus.exe")
                WinActivate "ahk_exe dopus.exe"
-         } else ;*/
+         } else 
             Run searchQuery
          DestroyGui(0)
       }
@@ -405,6 +406,21 @@ ButtonSubmit(*)
                lastLinkIndex:=SubStr(editBar.value,2)
                linksListbox.focus()
                editBar.value:=""
+               return
+            } else if (lastSub.UsrIn ~= "^\^.*") { ; Load current link into edit bar
+               if (SubStr(lastSub.UsrIn,2)!=""){
+                  try {
+                     loadPos:=Integer(SubStr(lastSub.UsrIn,2))
+                  } catch TypeError {
+                     MsgBox "Please only enter number values."
+                     return
+                  }
+                  if (loadPos>linkArray.length)
+                     loadPos:=linkArray.length
+                  editBar.value:=RestoreLinks(linkArray[loadPos][2])
+               } else
+                  editBar.value:=RestoreLinks(linkArray[linksListbox.value][2])
+               Send "{End}"
                return
             } else if (lastSub.UsrIn ~= "i)^import>.*") {
                if (lastSub.UsrIn ~= "i).*html`"?$") {
@@ -613,7 +629,7 @@ SetLinkHighlight(*)
    global urlDisplay
    global modeTxt
    try {
-      urlDisplay := modeTxt . linkArray[linksListbox.value][2]
+      urlDisplay := modeTxt . RestoreLinks(linkArray[linksListbox.value][2])
    } catch {
       urlDisplay := modeTxt
    }
@@ -642,7 +658,8 @@ AppendLinks(*)
       
       if (linkTxt.Has(2) && linkTxt.Has(3) && linkTxt[2] != "") { ; Add link in first position
          cleanLabel := CleanLabels(linkTxt[2])
-         appendTxt:= '`n"' . linkTxt[1] . '",' . '"[' . cleanLabel . "](" . Trim(linkTxt[3],'"') . ')"'
+         cleanLink := CleanLinks(linkTxt[3])
+         appendTxt:= '`n"' . linkTxt[1] . '",' . '"[' . cleanLabel . "](" . cleanLink . ')"'
          FileAppend appendTxt, repo
          ;return
       } else if (SubStr(lastSub.UsrIn,-2) = "++") { ; Rename current category
@@ -671,8 +688,9 @@ AppendLinks(*)
       return
    } else if (linkIndex == "v") { ; Add link in last position
       cleanLabel := CleanLabels(linkTxt[3])
+      cleanLink := CleanLinks(linkTxt[4])
       if (linkTxt.Has(4))
-         linkArray.push([cleanLabel,Trim(linkTxt[4],'"')])
+         linkArray.push([cleanLabel,cleanLink])
       else
          linkArray.push([cleanLabel,""])
       lastLinkIndex:=linkArray.length
@@ -689,17 +707,17 @@ AppendLinks(*)
       }
       lastLinkIndex := linkIndex
       if (linkTxt[3] != "" && linkTxt.Has(4)) {
-         linkTxt[4] := Trim(linkTxt[4],'"')
          cleanLabel := CleanLabels(linkTxt[3])
-         linkArray.InsertAt(linkIndex,[cleanLabel,linkTxt[4]]) ; Insert at specified position
+         cleanLink := CleanLinks(linkTxt[4])
+         linkArray.InsertAt(linkIndex,[cleanLabel,cleanLink]) ; Insert at specified position
       } else if (linkTxt[3]=="") {
-         linkTxt[4] := Trim(linkTxt[4],'"')
+         cleanLink := CleanLinks(linkTxt[4])
          if (!linkTxt.Has(4)) {
-            linkArray.InsertAt(linkIndex,[linkTxt[3],linkTxt[4]]) 
+            linkArray.InsertAt(linkIndex,[linkTxt[3],cleanLink]) 
          } else if (linkTxt[4]=="") {
             linkArray.InsertAt(linkindex,["",""])
          } else {
-            linkArray[linkIndex][2]:=linkTxt[4] ; Update URL at position
+            linkArray[linkIndex][2]:=cleanLink ; Update URL at position
             MsgBox linkArray[linkIndex][1] . " now links to " . linkArray[linkIndex][2]
          }
       } else if (!linkTxt.Has(4)) {
@@ -719,13 +737,13 @@ AppendLinks(*)
       }
    } else { ; Unspecified position number
       if (linkTxt[2] != "" && linkTxt.Has(3)) {
-         linkTxt[3] := Trim(linkTxt[3],'"')
          cleanLabel := CleanLabels(linkTxt[2])
-         linkArray.InsertAt(1,[cleanLabel,linkTxt[3]]) ; Insert in first position
+         cleanLink := CleanLinks(linkTxt[3])
+         linkArray.InsertAt(1,[cleanLabel,cleanLink]) ; Insert in first position
          lastLinkIndex := 1
       } else if (linkTxt[2]=="") {
-         linkArray[linksListbox.value][2]:=Trim(linkTxt[3],'"') ; Update URL of current
-         MsgBox linkArray[linksListbox.value][1] . " now links to " . linkArray[linksListbox.value][2]
+         linkArray[linksListbox.value][2]:=CleanLinks(linkTxt[3]) ; Update URL of current
+         MsgBox linkArray[linksListbox.value][1] . " now links to " . Trim(linkTxt[3],'"')
       } else if (!linkTxt.Has(3)) {
          oldLabel:=linkArray[linksListbox.value][1]
          cleanLabel := CleanLabels(linkTxt[2])
@@ -1527,7 +1545,6 @@ ClickOff(ThisHotkey)
    reassignID := WinExist("Reassign File Path?")
    MouseGetPos ,,&winClick
    if (winClick!=hsID && winClick!=contID && winClick!=reassignID && winClick != A_ScriptName) {
-      Click
       DestroyGui(0)
    }
    Click "Down"
@@ -1685,8 +1702,7 @@ translateHotkey(usrHotkey)
 
 CleanLabels(uncleanLabel)
 {
-   labelReplace := StrReplace(uncleanLabel, "|", "-")
-   labelReplace := StrReplace(labelReplace, ")", "}")
+   labelReplace := StrReplace(uncleanLabel, ")", "}")
    labelReplace := StrReplace(labelReplace, "(", "{")
    labelReplace := StrReplace(labelReplace, "[", "{")
    labelReplace := StrReplace(labelReplace, "]", "}")
@@ -1698,6 +1714,25 @@ CleanLabels(uncleanLabel)
    labelReplace := StrReplace(labelReplace, "&#39;", "``")
    labelReplace := StrReplace(labelReplace, "&#150;", "-")
    Return labelReplace
+}
+
+CleanLinks(uncleanLink)
+{
+   Trim(uncleanLink,'"')
+   linkReplace := StrReplace(uncleanLink, "[", "<")
+   linkReplace := StrReplace(linkReplace, "]", ">")
+   linkReplace := StrReplace(linkReplace, "(", "{")
+   linkReplace := StrReplace(linkReplace, ")", "}")
+   Return linkReplace
+}
+
+RestoreLinks(cleanedLink)
+{
+   linkReplace := StrReplace(cleanedLink, "<", "[")
+   linkReplace := StrReplace(linkReplace, ">", "]")
+   linkReplace := StrReplace(linkReplace, "{", "(")
+   linkReplace := StrReplace(linkReplace, "}", ")")
+   Return linkReplace
 }
 
 FindDrive(filePath)
