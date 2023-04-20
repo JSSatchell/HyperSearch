@@ -25,7 +25,7 @@ if (ProgID = "BraveHTML")
    Browser := "brave.exe"
 
 ; Initialize global variables
-version:="0.3.02"
+version:="0.3.03"
 lastIndex:=1
 lastLinkIndex:=1
 mouseKeep:=0
@@ -61,9 +61,9 @@ currentGui := minMode = 1 ? "LiteGui" : "MainGui"
 
 ; Check for repo file
 if !FileExist(repo) {
-   if (sMode == "web")
+   if (sMode = "web")
       GenerateHSR("HSR_Master.csv",1)
-   else if (sMode == "dir")
+   else if (sMode = "dir")
       GenerateHSR("HFR_Master.csv",2)
 }
 
@@ -152,7 +152,8 @@ LocalHotkeysOff()
    Hotkey "^c", CopyLink, "off"
    Hotkey "!e", ButtonSubmit, "off I2"
    Hotkey "!q", "off", "I2"
-   Hotkey "LButton", ClickOff, "off"
+   Hotkey "LButton", ClickOff, "off I2"
+   ;Hotkey "LButton", "off", "I2"
    Hotkey "tab", "off", "I2"
 }
 
@@ -248,7 +249,7 @@ BuildHSRArray(*)
    try {
       HSR_String := FileRead(repo)
    } catch {
-      noRepo := InputBox("Repo file " repo " not found. Please provide a new file path:","Repository Not Found")
+      noRepo := InputBox('Repo file "' repo '" not found. Please provide a path to an existing repo, or enter the name for a new one.','Repository Not Found')
       if (noRepo.Result == "Cancel" || noRepo.Value=="") {
          MsgBox "Default repository will be used."
          if (sMode=="web") {
@@ -308,35 +309,15 @@ BuildHSRArray(*)
 
 ;;;;; SEARCH FUNCTIONS
 
-webSearch(searchQuery,override)
+goSearch(searchQuery,override)
 {
+   ; Override code:
+   ;   0 = pass based on search mode (sMode)
+   ;   1 = always open in web
+   ;   2 = always open as folder
    global sMode
    global linkArray
-   if (sMode == "dir" && override != 1) {
-      if (searchQuery != "" && searchQuery != " "){
-         searchQuery := RestoreLinks(searchQuery)
-         if !FileExist(searchQuery) {
-            searchQuery := FindDrive(subStr(searchQuery,4))
-            if (searchQuery!=false) {
-              reassignMsg := MsgBox("It looks like the file path has changed. Would you like to reassign the path?`n`nOld Path:`n" linkArray[linksListbox.value][2] "`n`nNew path:`n" searchQuery, "Reassign File Path?", 260)
-               If (reassignMsg = "Yes"){
-                  linkArray[linksListbox.value][2] := searchQuery
-                  UpdateLinkList()
-               }
-            } else
-               return
-         }
-
-         useDopus:=FileExist("C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe") ? 0 : 0
-         if(useDopus=1) {
-            Run 'C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe /acmd Go "' searchQuery '" NEWTAB=findexisting OPENINDUAL'
-            if WinExist("ahk_exe dopus.exe")
-               WinActivate "ahk_exe dopus.exe"
-         } else 
-            Run searchQuery
-         DestroyGui(0)
-      }
-   } else {
+   if (sMode = "web" && override != 2 || override = 1) { ; Search web
       ;;;;;Adapted from this thread: https://www.autohotkey.com/board/topic/13404-google-search-on-highlighted-text/
       if (searchQuery != "" && searchQuery != " "){
          searchQuery := StrReplace(searchQuery, "`n`r", A_Space)
@@ -354,6 +335,30 @@ webSearch(searchQuery,override)
             Run browser " " searchEngine searchQuery
          DestroyGui(0)
       }
+   } else if (sMode = "dir" && override != 1 || override = 2) { ; Search files
+      if (searchQuery != "" && searchQuery != " ") {
+         searchQuery := RestoreLinks(searchQuery)
+         if !FileExist(searchQuery) {
+            searchQuery := FindDrive(subStr(searchQuery,4))
+            if (searchQuery!=false) {
+               contMsg := MsgBox("It looks like the file path has changed. Would you like to reassign the path?`n`nOld Path:`n" linkArray[linksListbox.value][2] "`n`nNew path:`n" searchQuery " ", "Reassign File Path?", 260)
+               if (contMsg = "Yes"){
+                  linkArray[linksListbox.value][2] := searchQuery
+                  UpdateLinkList()
+               }
+            } else
+               return
+         }
+         dirCheck := InStr(FileExist(searchQuery), "D")
+         useDopus := FileExist("C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe") && dirCheck != 0 ? 1 : 0
+         if(useDopus=1) {
+            Run 'C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe /acmd Go "' searchQuery '" NEWTAB=findexisting OPENINDUAL'
+            if WinExist("ahk_exe dopus.exe")
+               WinActivate "ahk_exe dopus.exe"
+         } else 
+            Run '"' searchQuery '"'
+         DestroyGui(0)
+      }
    }
 }
 
@@ -369,7 +374,7 @@ searchHighlight(ThisHotkey)
       MsgBox "Could not perform search."
       return
    }
-   webSearch(A_Clipboard,1)
+   goSearch(A_Clipboard,2)
    A_Clipboard := prevClipboard
 }
 
@@ -395,22 +400,23 @@ ButtonSubmit(*)
                return
             }
          } else {
-            webSearch(linkArray[linksListbox.value][2],0)
+            goSearch(linkArray[linksListbox.value][2],0)
             return
          }
       } else if (activeControl == catListbox) {
          linksListbox.Focus()
       } else if (activeControl == editBar || activeControl == submitButton) {
          if (lastSub.UsrIn != ""){
-            if (lastSub.UsrIn ~= "^ .*" || editBar.value ~= "^#.*") { ; Set focus to links listbox without opening link
+            cleanIn := StrReplace(lastSub.UsrIn,"``+","><")
+            if (cleanIn ~= "^ .*" || editBar.value ~= "^#.*") { ; Set focus to links listbox without opening link
                lastLinkIndex:=SubStr(editBar.value,2)
                linksListbox.focus()
                editBar.value:=""
                return
-            } else if (lastSub.UsrIn ~= "^\^.*") { ; Load current link into edit bar
-               if (SubStr(lastSub.UsrIn,2)!=""){
+            } else if (cleanIn ~= "^\^.*") { ; Load current link into edit bar
+               if (SubStr(cleanIn,2)!=""){
                   try {
-                     loadPos:=Integer(SubStr(lastSub.UsrIn,2))
+                     loadPos:=Integer(SubStr(cleanIn,2))
                   } catch TypeError {
                      MsgBox "Please only enter number values."
                      return
@@ -422,52 +428,52 @@ ButtonSubmit(*)
                   editBar.value:=RestoreLinks(linkArray[linksListbox.value][2])
                Send "{End}"
                return
-            } else if (lastSub.UsrIn ~= "i)^import>.*") {
-               if (lastSub.UsrIn ~= "i).*html`"?$") {
+            } else if (cleanIn ~= "i)^import>.*") {
+               if (cleanIn ~= "i).*html`"?$") {
                   ImportChrome()
-               } else if (lastSub.UsrIn ~= "i).*csv`"?$") {
+               } else if (cleanIn ~= "i).*csv`"?$") {
                   ImportCSV()
                } else
-                  MsgBox "Unsupported format"
+                  MsgBox "Unsupported format."
                DestroyGui(0)
                LoadGui()
                return
-            } else if (lastSub.UsrIn ~= "i)^load>.*") {
+            } else if (cleanIn ~= "i)^load>.*") {
                LoadRepo()
                DestroyGui(1)
                LoadGui()
                return
-            } else if (lastSub.UsrIn ~= "i)^new>.*") {
+            } else if (cleanIn ~= "i)^new>.*") {
                NewRepo()
                DestroyGui(1)
                LoadGui()
                return
-            } else if (lastSub.UsrIn ~= "i)^export>cat.{0,5}>h.{0,4}s.{0,5}") {
+            } else if (cleanIn ~= "i)^export>cat.{0,5}>h.{0,4}s.{0,5}") {
                ShareCat()
                DestroyGui(0)
                Run A_WorkingDir
                return
-            } else if (lastSub.UsrIn ~= "i)^export>cat.{0,5}") {
+            } else if (cleanIn ~= "i)^export>cat.{0,5}") {
                ExportCat()
                DestroyGui(0)
                Run A_WorkingDir
                return
-            } else if (lastSub.UsrIn ~= "i)^export>repo.{0,6}") {
+            } else if (cleanIn ~= "i)^export>repo.{0,6}") {
                ExportRepo()
                DestroyGui(0)
                Run A_WorkingDir
                return
-            } else if (lastSub.UsrIn ~= ".*\+.*"){
-               AppendLinks()
+            } else if (cleanIn ~= ".*\+.*"){
+               AppendLinks(cleanIn)
                LoadLinks("AppendLinks")
                editBar.Value := ""
                return
-            } else if (lastSub.UsrIn ~= "i)del.{0,3}\-[0-9|cat.{0,5}]*"){
+            } else if (cleanIn ~= "i)del.{0,3}\-[0-9|cat.{0,5}]*"){
                RemoveLinks()
                LoadLinks("RemoveLinks")
                editBar.Value := ""
                return
-            } else if (lastSub.UsrIn ~= "[1-9]*~[1-9]*" || lastSub.UsrIn ~= "[1-9]*%[1-9]*"){
+            } else if (cleanIn ~= "[1-9]*~[1-9]*" || cleanIn ~= "[1-9]*%[1-9]*"){
                ReorderLinks()
                LoadLinks("ReorderLinks")
                editBar.Value := ""
@@ -485,7 +491,7 @@ ButtonSubmit(*)
                }
             } else {
                searchURL := linkArray[linksListbox.value][2]
-               webSearch(searchURL,0)
+               goSearch(searchURL,0)
             }
          }
       }
@@ -507,7 +513,7 @@ ButtonSubmit(*)
       if (minMode == 1 && lastSub.UsrIn == "")
             return
       else {
-         webSearch(lastSub.UsrIn,1)
+         goSearch(lastSub.UsrIn,1)
       }
    }
 }
@@ -619,7 +625,7 @@ ActivateLinks(*)
       RegExMatch(linkLabel, "<(.*?)>", &match)
       ControlChooseString match[1], catListbox
    } else {
-      webSearch(linkArray[linksListbox.value][2],0)
+      goSearch(linkArray[linksListbox.value][2],0)
    }
 }
 
@@ -638,14 +644,14 @@ SetLinkHighlight(*)
 
 ;;;;; CATEGORY & LINK MODIFICATION
 
-AppendLinks(*)
+AppendLinks(input*)
 {
    lastSub := %currentGui%.Submit(0)
    global HSR_Array
    global linkString:=""
    global lastLinkIndex:=linksListbox.value
    ; Sample: 1Category+2LinkIndex+3LinkName+4URL
-   linkTxt:=StrSplit(lastSub.UsrIn,"+",,4)
+   linkTxt:=StrSplit(input[1],"+",,4)
    linkIndex:=linkTxt[2]
    if (linkTxt[1]!="") { ; Add new category
       Loop HSR_Array.Length
@@ -662,7 +668,7 @@ AppendLinks(*)
          appendTxt:= '`n"' . linkTxt[1] . '",' . '"[' . cleanLabel . "](" . cleanLink . ')"'
          FileAppend appendTxt, repo
          ;return
-      } else if (SubStr(lastSub.UsrIn,-2) = "++") { ; Rename current category
+      } else if (SubStr(input[1],-2) = "++") { ; Rename current category
          Loop HSR_Array.Length
          {
             if (lastSub.Index=HSR_Array[A_Index][1]) {
@@ -672,7 +678,7 @@ AppendLinks(*)
                break
             }
          }
-      } else if (SubStr(lastSub.UsrIn,-1) == "+") { ; Add category with blank first entry
+      } else if (SubStr(input[1],-1) == "+") { ; Add category with blank first entry
          appendTxt:= '`n"' . linkTxt[1] . '",' . '"[ ]()"'
          FileAppend appendTxt, repo
       } else {
@@ -718,7 +724,7 @@ AppendLinks(*)
             linkArray.InsertAt(linkindex,["",""])
          } else {
             linkArray[linkIndex][2]:=cleanLink ; Update URL at position
-            MsgBox linkArray[linkIndex][1] . " now links to " . linkArray[linkIndex][2]
+            MsgBox linkArray[linkIndex][1] . " now links to " . RestoreLinks(linkArray[linkIndex][2])
          }
       } else if (!linkTxt.Has(4)) {
          if (linkIndex>linkArray.length) {
@@ -743,7 +749,7 @@ AppendLinks(*)
          lastLinkIndex := 1
       } else if (linkTxt[2]=="") {
          linkArray[linksListbox.value][2]:=CleanLinks(linkTxt[3]) ; Update URL of current
-         MsgBox linkArray[linksListbox.value][1] . " now links to " . Trim(linkTxt[3],'"')
+         MsgBox linkArray[linksListbox.value][1] . " now links to " . RestoreLinks(linkTxt[3])
       } else if (!linkTxt.Has(3)) {
          oldLabel:=linkArray[linksListbox.value][1]
          cleanLabel := CleanLabels(linkTxt[2])
@@ -852,7 +858,7 @@ DelCat(*)
    contMsg := MsgBox("Do you want to delete all of the data in " lastSub.index "?", "Continue?", 260)
    If (contMsg = "No")
       return
-   If (contMsg, "Yes")
+   If (contMsg = "Yes")
    {
       Loop HSR_Array.Length
       {
@@ -1166,8 +1172,8 @@ ImportChrome(*)
          }
          catIndex++
       } else if (head == "A " && numTabs == 1) {
-         if (otherChk==0) {
-            fullArray[catIndex][1]:=" Other bookmarks"
+         if (otherChk=0) {
+            fullArray.Push([" Other bookmarks",""])
             otherChk:=1
             otherCat:=catIndex
          }
@@ -1352,7 +1358,7 @@ FavButton(favName, favPos, FavMenu)
    if(URL == "")
       MsgBox "Favorite " . favPos . " is undefined."
    else {
-      webSearch(URL,1)
+      goSearch(URL,1)
       DestroyGui(0)
    }
 }
@@ -1393,15 +1399,15 @@ EditFav(*)
 helpLinks(choice*)
 {
    if (choice[1]="Support and updates")
-      Run "https://github.com/JSSatchell/HyperSearch"
+      goSearch("https://github.com/JSSatchell/HyperSearch",1)
    else if (choice[1]=repoName) {
-      if (repo!=repoName) {
+      if (repo!=repoName)
          repoPath := RTrim(repo,repoName)
-         Run repoPath
-      } else
-         Run A_WorkingDir
+      else
+         repoPath := A_WorkingDir
+      goSearch(repoPath,2)
    } else if (choice[1]="v" version)
-      run A_WorkingDir
+      goSearch(A_WorkingDir,2)
    DestroyGui(0)
 }
 
@@ -1540,6 +1546,8 @@ SwapMode(*)
 
 ClickOff(ThisHotkey)
 {
+   ;;;;;;;; WHY DO SOME DIALOGS NOT ACCEPT CLICKING AND SOME DO ?!?!?!?!
+
    hsID := WinExist("HyperSearch")
    contID := WinExist("Continue?")
    reassignID := WinExist("Reassign File Path?")
@@ -1550,6 +1558,11 @@ ClickOff(ThisHotkey)
    Click "Down"
    Keywait A_ThisHotkey
    Click "Up"
+   ;ToolTip WinGetPID(winClick) " - " WinGetID(winClick) "`n" WinGetPID(A_ScriptHwnd) " - " WinGetID(A_ScriptHwnd)
+   ;SetTimer () => ToolTip(), -5000
+
+   ;if (WinGetPID(winClick)!=WinGetPID(A_ScriptHwnd))
+   ;   DestroyGui(0)
 }
 
 RMenu(ThisHotkey)
@@ -1671,18 +1684,19 @@ GenerateHSR(hsrFile,kind)
    global repo
    repo:=hsrFile
    if (kind==1) {
-      FileAppend "
+      FileAppend
       (
-" Quick Access","[<Quick Start Guide>](*)"
-"Quick Start Guide","[NAVIGATION REFERENCE](https://github.com/JSSatchell/HyperSearch#navigation)[Press Space to search the category index on the left]()[Tab between control windows]()[Press Enter after typing Space to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE](https://github.com/JSSatchell/HyperSearch#adding--removing-categories--links)[Edit Favorites - 'Favorite#>Label>URL'](https://github.com/JSSatchell/HyperSearch#update-favorites)[Add Index Category - 'Category Name+']()[Add link - '+Link Name+Link URL']()[Add at Position - '+Position#+Link Name+LinkURL']()[Remove Selected Link - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete-Category']()[ ]()[SETTINGS](https://github.com/JSSatchell/HyperSearch#update-the-settings)[Min/Max Mode - 'Set>Min/Max']()[Dark/Light Mode - 'Set>Dark/Light']()[Transparency - 'Set>Opacity>Percentage']()[]()[CLICK HERE for full feature list & updates](https://github.com/JSSatchell/HyperSearch)"
-      )", repo
+'" Quick Access","[<Quick Start Guide>](*)"
+"Quick Start Guide","[NAVIGATION REFERENCE](https://github.com/JSSatchell/HyperSearch#navigation)[Press Space to search the category index on the left]()[Tab between control windows]()[Press Enter after typing Space to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE](https://github.com/JSSatchell/HyperSearch#adding--removing-categories--links)[Edit Favorites - `'Favorite#>Label>URL`'](https://github.com/JSSatchell/HyperSearch#update-favorites)[Add Index Category - `'Category Name+`']()[Add link - `'+Link Name+Link URL`']()[Add at Position - `'+Position#+Link Name+LinkURL`']()[Remove Selected Link - `'Delete-`']()[Remove at Position - `'Delete-Position#`']()[Delete Category - `'Delete-Category`']()[ ]()[SETTINGS](https://github.com/JSSatchell/HyperSearch#update-the-settings)[Min/Max Mode - `'Set>Min/Max`']()[Dark/Light Mode - `'Set>Dark/Light`']()[Transparency - `'Set>Opacity>Percentage`']()[]()[CLICK HERE for full feature list & updates](https://github.com/JSSatchell/HyperSearch)"'
+      ), repo
       IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
    } else if (kind==2){
-      FileAppend "
+      RegExMatch(A_Desktop, ".:\\Users\\(.+)\\Desktop", &usr)
+      FileAppend
       (
-" Quick Access","[<Quick Start Guide>](*)"
-"Quick Start Guide","[NAVIGATION REFERENCE]()[Press Space to search the category index on the left]()[Tab between control windows]()[Press Enter after typing Space to set focus to links]()[Use Enter or double click labels to activate path]()[ ]()[TEXT ENTRY REFERENCE]()[Edit Favorites - 'Favorite#>Label>URL']()[Add Index Category - 'Category Name+']()[Add file/folder - '+File/folder Name+Path']()[Add at Position - '+Position#+File/Folder Name+Path']()[Remove Selected File/Folder Reference - 'Delete-']()[Remove at Position - 'Delete-Position#']()[Delete Category - 'Delete-Category']()[ ]()[SETTINGS]()[Min/Max Mode - 'Set>Min/Max']()[Dark/Light Mode - 'Set>Dark/Light']()[Transparency - 'Set>Opacity>Percentage']()[]()[CLICK HERE for full feature list & updates]()"
-      )", repo
+'" Quick Access","[Desktop](' A_Desktop ')[My Documents](' A_MyDocuments ')[Downloads](C:\Users\' usr[1] '\Downloads)[Pictures](C:\Users\' usr[1] '\Pictures)[]()[HyperSearch Folder](' A_WorkingDir ')[   Open Repository](' repo ')[]()[<Quick Start Guide>](*)"
+"Quick Start Guide","[NAVIGATION REFERENCE]()[Press Space to search the category index on the left]()[Tab between control windows]()[Press Enter after typing Space to set focus to links]()[Use Enter or double click labels to activate path]()[ ]()[TEXT ENTRY REFERENCE]()[Edit Favorites - `'Favorite#>Label>URL`']()[Add Index Category - `'Category Name+`']()[Add file/folder - `'+File/folder Name+Path`']()[Add at Position - `'+Position#+File/Folder Name+Path`']()[Remove Selected File/Folder Reference - `'Delete-`']()[Remove at Position - `'Delete-Position#`']()[Delete Category - `'Delete-Category`']()[ ]()[SETTINGS]()[Min/Max Mode - `'Set>Min/Max`']()[Dark/Light Mode - `'Set>Dark/Light`']()[Transparency - `'Set>Opacity>Percentage`']()"'
+      ), repo
       IniWrite repo, "HS_Settings.ini", "Settings", "DirRepo"
    }
 }
@@ -1713,30 +1727,34 @@ CleanLabels(uncleanLabel)
    labelReplace := StrReplace(labelReplace, "&gt;", ">")
    labelReplace := StrReplace(labelReplace, "&#39;", "``")
    labelReplace := StrReplace(labelReplace, "&#150;", "-")
+   labelReplace := StrReplace(labelReplace, ",", "-")
    Return labelReplace
 }
 
 CleanLinks(uncleanLink)
 {
-   Trim(uncleanLink,'"')
+   uncleanLink := Trim(uncleanLink)
+   uncleanLink := Trim(uncleanLink, '"')
    linkReplace := StrReplace(uncleanLink, "[", "<")
    linkReplace := StrReplace(linkReplace, "]", ">")
-   linkReplace := StrReplace(linkReplace, "(", "{")
-   linkReplace := StrReplace(linkReplace, ")", "}")
+   linkReplace := StrReplace(linkReplace, "(", "<<")
+   linkReplace := StrReplace(linkReplace, ")", ">>")
    Return linkReplace
 }
 
 RestoreLinks(cleanedLink)
 {
-   linkReplace := StrReplace(cleanedLink, "<", "[")
+   linkReplace := StrReplace(cleanedLink, "<<", "(")
+   linkReplace := StrReplace(linkReplace, ">>", ")")
+   linkReplace := StrReplace(linkReplace, "><", "+")
+   linkReplace := StrReplace(linkReplace, "<", "[")
    linkReplace := StrReplace(linkReplace, ">", "]")
-   linkReplace := StrReplace(linkReplace, "{", "(")
-   linkReplace := StrReplace(linkReplace, "}", ")")
    Return linkReplace
 }
 
 FindDrive(filePath)
 {
+   MsgBox "Checking drives.", ,"T1"
    driveList := DriveGetList()
    Loop Parse driveList
    {
