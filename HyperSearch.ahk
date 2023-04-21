@@ -14,10 +14,10 @@ SetWorkingDir A_ScriptDir  ; Ensures a consistent starting directory.
 #SingleInstance force
 CoordMode "Mouse"
 
-;;;;;;;;;;;;
-; UPDATE VERSION NUMBER
-version:="0.3.1"
-;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;
+; UPDATE VERSION NUMBER 
+version:="0.3.1"        
+;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Use default browser
 ProgID := RegRead("HKEY_CURRENT_USER\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice", "Progid")
@@ -378,7 +378,7 @@ searchHighlight(ThisHotkey)
       MsgBox "Could not perform search."
       return
    }
-   goSearch(A_Clipboard,2)
+   goSearch(A_Clipboard,1)
    A_Clipboard := prevClipboard
 }
 
@@ -417,7 +417,7 @@ ButtonSubmit(*)
                linksListbox.focus()
                editBar.value:=""
                return
-            } else if (cleanIn ~= "^\^.*") { ; Load current link into edit bar
+            } else if (cleanIn ~= "^\^[0-9]*") { ; Load current link into edit bar
                if (SubStr(cleanIn,2)!=""){
                   try {
                      loadPos:=Integer(SubStr(cleanIn,2))
