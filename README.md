@@ -1,11 +1,7 @@
 # HyperSearch
-Instant internet search and link managment.
+Instant internet search and shortcut management for hyperlinks and files.
 
-A human-intelligence personal internet catalog. No feeds, no suggestions, no ads.
-
-In video editor language: It's [FX Console](https://www.videocopilot.net/tutorials/fx_console_plugin/?vc=true)/[Excalibur](https://knightsoftheeditingtable.com/excalibur) for the internet.
-
-*Now fully updated to AHK v2*
+Powered by human-intelligence.
 
 ### [DOWNLOAD](https://github.com/JSSatchell/HyperSearch/releases)  |  [QUICK START VIDEO](https://youtu.be/1HC9vhA5meY)
 
@@ -13,6 +9,7 @@ In video editor language: It's [FX Console](https://www.videocopilot.net/tutoria
 
  - [Overview](https://github.com/JSSatchell/HyperSearch#overview)
  - [General Usage](https://github.com/JSSatchell/HyperSearch#general-usage)
+ - [Switching Between Web and File Mode](https://github.com/JSSatchell/HyperSearch#switching-search-mode)
  - [Navigation](https://github.com/JSSatchell/HyperSearch#navigation)
  - [Adding & Removing Categories & Links](https://github.com/JSSatchell/HyperSearch#adding--removing-categories--links)
  - [Editing Category Names, Link Labels, and URLs](https://github.com/JSSatchell/HyperSearch#editing-category-names-link-labels-and-urls)
@@ -58,6 +55,24 @@ The app will stay open in the system tray unless closed from the tray or via `Ex
 
 When the app is launched for the first time it will create `HS_Settings.ini` and `HSR_Master.csv` sidecar files. If the .exe is moved the .ini and .csv files must stay in the same root folder as the .exe or the settings will be reset. Do not rename these files or new ones will be created the next time the app is launched and the app will be reset to it's default configuration.
 
+The `?` menu contains a link back to this guide, a link to the folder of the current repository file, and the active version number which directs to the folder of the application.
+
+##### Switching Search Mode
+
+Use the `!` in the top right to switch between `Web` mode and `File` mode. The current search mode will be indicated by the status bar in the bottom left.
+
+In `Web` mode all links will be accessed via the default web browser and search engine, whereas in `File` mode "links" should be input as file paths and will be accessed via Windows Explorer.
+
+_Note: Windows 11 allows for copying the file path of a selected file or folder via_ `Ctrl`+`Shift`+`C`_._
+
+When switching to `File` mode for the first time, a dialog will prompt to enter a name for a new HFR file (HyperSearch File Repository). This will create a separate repository from the `HSR_Master.csv` file to be used in `File` mode.
+
+The rest of this guide will refer to input items as "links" or "URLs," although the same methods can be used to input file or folder paths. Be sure that when inputting items, the link or file path is formatted appropriately for the current search mode.
+
+Likewise, when loading and importing repositories, be sure that the new repository is formatted appropriately for the current search mode.
+
+_Note: Favorites will remain consistent between_ `Web` _and_ `File` _mode and will always be accessed as web links. Also, the search bar will always send the search query to the web unless modifying the repository as indicated in the rest of this guide._
+
 [^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
 
 ---
@@ -90,6 +105,10 @@ If the search bar is active, `Alt`+`S` or `Alt`+`W` will activate the links wind
 
 Also with the search bar active, `Alt`+`Q` will clear all of the current text so a new search can be started more quickly.
 
+To pull the URL of the selected item into the edit bar, type `^` and press `Enter`. A link index can be specified after the `^` to pull that link's URL into the search bar.
+
+    ^5
+
 [^ TOP ^](https://github.com/JSSatchell/HyperSearch#hypersearch)
 
 ---
@@ -104,7 +123,7 @@ To add a link to the current category, type `+` followed the name of the link fo
 
     +GMail+mail.google.com
     
-_Note: Link names should not contain the characters_ `[` `]` `(` `)` _or_ `|`
+_Note: When adding a link or filename with a_ `+` _character, escape it by preceding it with a backtick._
 
 To add a link at a specific position, type `+` followed by the position number followed by `+` followed by the link name followed by `+` followed by the URL
 
