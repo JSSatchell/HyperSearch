@@ -14,6 +14,11 @@ SetWorkingDir A_ScriptDir  ; Ensures a consistent starting directory.
 #SingleInstance force
 CoordMode "Mouse"
 
+;;;;;;;;;;;;
+; UPDATE VERSION NUMBER
+version:="0.3.1"
+;;;;;;;;;;;;
+
 ; Use default browser
 ProgID := RegRead("HKEY_CURRENT_USER\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice", "Progid")
 Browser := "msedge.exe"
@@ -25,7 +30,6 @@ if (ProgID = "BraveHTML")
    Browser := "brave.exe"
 
 ; Initialize global variables
-version:="0.3.03"
 lastIndex:=1
 lastLinkIndex:=1
 mouseKeep:=0
@@ -1124,7 +1128,7 @@ ImportChrome(*)
             thisCat := " Bookmarks Toolbar"
          Loop HSR_Array.Length
          {
-            if (thisCat == HSR_Array[A_Index][1]) {
+            if (replace = 0 && thisCat == HSR_Array[A_Index][1]) {
                ogCat := thisCat
                thisCat.="_1"
             }
@@ -1687,15 +1691,18 @@ GenerateHSR(hsrFile,kind)
       FileAppend
       (
 '" Quick Access","[<Quick Start Guide>](*)"
-"Quick Start Guide","[NAVIGATION REFERENCE](https://github.com/JSSatchell/HyperSearch#navigation)[Press Space to search the category index on the left]()[Tab between control windows]()[Press Enter after typing Space to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE](https://github.com/JSSatchell/HyperSearch#adding--removing-categories--links)[Edit Favorites - `'Favorite#>Label>URL`'](https://github.com/JSSatchell/HyperSearch#update-favorites)[Add Index Category - `'Category Name+`']()[Add link - `'+Link Name+Link URL`']()[Add at Position - `'+Position#+Link Name+LinkURL`']()[Remove Selected Link - `'Delete-`']()[Remove at Position - `'Delete-Position#`']()[Delete Category - `'Delete-Category`']()[ ]()[SETTINGS](https://github.com/JSSatchell/HyperSearch#update-the-settings)[Min/Max Mode - `'Set>Min/Max`']()[Dark/Light Mode - `'Set>Dark/Light`']()[Transparency - `'Set>Opacity>Percentage`']()[]()[CLICK HERE for full feature list & updates](https://github.com/JSSatchell/HyperSearch)"'
+"Quick Start Guide","[Use the `'!`' in the upper right to switch to file mode]()[]()[NAVIGATION REFERENCE](https://github.com/JSSatchell/HyperSearch#navigation)[Press Space to search the category index on the left]()[Tab between control windows]()[Press Enter after typing Space to set focus to links]()[Use Enter or double click links to activate URL]()[ ]()[TEXT ENTRY REFERENCE](https://github.com/JSSatchell/HyperSearch#adding--removing-categories--links)[Edit Favorites - `'Favorite#>Label>URL`'](https://github.com/JSSatchell/HyperSearch#update-favorites)[Add Index Category - `'Category Name+`']()[Add link - `'+Link Name+Link URL`']()[Add at Position - `'+Position#+Link Name+LinkURL`']()[Remove Selected Link - `'Delete-`']()[Remove at Position - `'Delete-Position#`']()[Delete Category - `'Delete-Category`']()[ ]()[SETTINGS](https://github.com/JSSatchell/HyperSearch#update-the-settings)[Min/Max Mode - `'Set>Min/Max`']()[Dark/Light Mode - `'Set>Dark/Light`']()[Transparency - `'Set>Opacity>Percentage`']()[]()[CLICK HERE for full feature list & updates](https://github.com/JSSatchell/HyperSearch)"'
       ), repo
       IniWrite repo, "HS_Settings.ini", "Settings", "Repository"
    } else if (kind==2){
       RegExMatch(A_Desktop, ".:\\Users\\(.+)\\Desktop", &usr)
+      noOD := usr[1]
+      if (usr[1] ~= ".+\\OneDrive")
+         noOD := SubStr(usr[1],1,(StrLen(usr[1])-9))
       FileAppend
       (
-'" Quick Access","[Desktop](' A_Desktop ')[My Documents](' A_MyDocuments ')[Downloads](C:\Users\' usr[1] '\Downloads)[Pictures](C:\Users\' usr[1] '\Pictures)[]()[HyperSearch Folder](' A_WorkingDir ')[   Open Repository](' repo ')[]()[<Quick Start Guide>](*)"
-"Quick Start Guide","[NAVIGATION REFERENCE]()[Press Space to search the category index on the left]()[Tab between control windows]()[Press Enter after typing Space to set focus to links]()[Use Enter or double click labels to activate path]()[ ]()[TEXT ENTRY REFERENCE]()[Edit Favorites - `'Favorite#>Label>URL`']()[Add Index Category - `'Category Name+`']()[Add file/folder - `'+File/folder Name+Path`']()[Add at Position - `'+Position#+File/Folder Name+Path`']()[Remove Selected File/Folder Reference - `'Delete-`']()[Remove at Position - `'Delete-Position#`']()[Delete Category - `'Delete-Category`']()[ ]()[SETTINGS]()[Min/Max Mode - `'Set>Min/Max`']()[Dark/Light Mode - `'Set>Dark/Light`']()[Transparency - `'Set>Opacity>Percentage`']()"'
+'" Quick Access","[Desktop](' CleanLinks(A_Desktop) ')[My Documents](' CleanLinks(A_MyDocuments) ')[Downloads](C:\Users\' CleanLinks(noOD) '\Downloads)[Pictures](C:\Users\' CleanLinks(usr[1]) '\Pictures)[]()[HyperSearch Folder](' CleanLinks(A_WorkingDir) ')[   Open Repository](' CleanLinks(repo) ')[]()[<Quick Start Guide>](*)"
+"Quick Start Guide","[Use the `'!`' in the upper right to switch to web mode]()[]()[NAVIGATION REFERENCE]()[Press Space to search the category index on the left]()[Tab between control windows]()[Press Enter after typing Space to set focus to links]()[Use Enter or double click labels to activate path]()[ ]()[TEXT ENTRY REFERENCE]()[Edit Favorites - `'Favorite#>Label>URL`']()[Add Index Category - `'Category Name+`']()[Add file/folder - `'+File/folder Name+Path`']()[Add at Position - `'+Position#+File/Folder Name+Path`']()[Remove Selected File/Folder Reference - `'Delete-`']()[Remove at Position - `'Delete-Position#`']()[Delete Category - `'Delete-Category`']()[ ]()[SETTINGS]()[Min/Max Mode - `'Set>Min/Max`']()[Dark/Light Mode - `'Set>Dark/Light`']()[Transparency - `'Set>Opacity>Percentage`']()"'
       ), repo
       IniWrite repo, "HS_Settings.ini", "Settings", "DirRepo"
    }
