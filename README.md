@@ -27,11 +27,11 @@ Powered by human-intelligence.
 
 ![image](https://user-images.githubusercontent.com/99512204/170307230-564138b0-1e40-4a6b-a034-a20c347755da.png)
 
-HyperSearch is a minimalist bookmark managing utility that focuses on speed and distraction-free access to what you're searching for.
+HyperSearch is a minimalist bookmark managing utility that focuses on speed and distraction-free access to user-defined web and file path shortcuts.
 
-It provides customizable hotkeys for searching any highlighted text as well as a search bar that can search both the internet and your personal index of link categories.
+It provides customizable hotkeys for searching any highlighted text as well as a GUI search bar that can search both the internet and your personal index of link categories.
 
-HyperSearch Lite is a streamlined version of the searchbar and favorites without the bookmark manager.
+HyperSearch Lite is a streamlined version of the web searchbar and favorites without the bookmark manager.
 
 **Preview:**
 
