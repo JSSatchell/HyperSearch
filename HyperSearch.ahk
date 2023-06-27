@@ -16,7 +16,7 @@ CoordMode "Mouse"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ; UPDATE VERSION NUMBER 
-version:="0.3.1"        
+version:="0.3.2"        
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Use default browser
@@ -298,7 +298,7 @@ BuildHSRArray(*)
          c:=A_Index ; Column number
          if (A_Index==1) ; Only search first column
          {
-            chck:=A_LoopField
+            chck:=A_LoopField . "|"
             dup := InStr(indexList,chck) ; Detect duplicates
             if (dup==0){
                indexList .= A_LoopField "|" ; Build index list for listbox
@@ -391,7 +391,7 @@ ButtonSubmit(*)
    activeControl := %currentGui%.FocusedCtrl
 
    if (minMode == 0) {
-      if (activeControl == linksListbox) {
+      if (activeControl == linksListbox || activeControl == catListbox) {
          if (linkArray[linksListbox.value][2] == "*") {
             linkLabel:=linkArray[linksListbox.value][1]
             RegExMatch(linkLabel, "<(.*?)>", &match) ; Open category via crosslink
@@ -672,7 +672,7 @@ AppendLinks(input*)
          appendTxt:= '`n"' . linkTxt[1] . '",' . '"[' . cleanLabel . "](" . cleanLink . ')"'
          FileAppend appendTxt, repo
          ;return
-      } else if (SubStr(input[1],-2) = "++") { ; Rename current category
+      } else if (linkTxt.Has(3) && linkTxt[2]="" && linkTxt[3]="") { ; Rename current category
          Loop HSR_Array.Length
          {
             if (lastSub.Index=HSR_Array[A_Index][1]) {
