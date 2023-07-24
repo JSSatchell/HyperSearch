@@ -1,8 +1,6 @@
 # HyperSearch
 Instant internet search and shortcut management for hyperlinks and files.
 
-Powered by human-intelligence.
-
 ### [DOWNLOAD](https://github.com/JSSatchell/HyperSearch/releases)  |  [QUICK START VIDEO](https://youtu.be/1HC9vhA5meY)
 
 ### GUIDE CONTENTS
