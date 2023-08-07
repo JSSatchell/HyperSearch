@@ -1,7 +1,7 @@
 # HyperSearch
 Instant internet search and shortcut management for hyperlinks and files.
 
-### [DOWNLOAD](https://github.com/JSSatchell/HyperSearch/releases)  |  [QUICK START VIDEO](https://youtu.be/1HC9vhA5meY)
+### [QUICK START VIDEO](https://youtu.be/1HC9vhA5meY)  |  [DOWNLOAD](https://github.com/JSSatchell/HyperSearch/releases)  |  [DONATE](https://jssatchellmedia.gumroad.com/l/HyperSearch)
 
 ### GUIDE CONTENTS
 
