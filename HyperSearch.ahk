@@ -1,4 +1,4 @@
-; JSSatchell 2023
+; JSSatchell 2026
 ; https://github.com/JSSatchell/HyperSearch
 
 #Requires AutoHotkey v2.0
@@ -20,7 +20,17 @@ version:="0.3.2"
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Use default browser
-ProgID := RegRead("HKEY_CURRENT_USER\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice", "Progid")
+
+try {
+   ProgID := RegRead("HKEY_CURRENT_USER\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoiceLatest", "Progid")
+} catch {
+   ProgID := RegRead("HKEY_CURRENT_USER\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoiceLatest\ProgId", "Progid")
+} catch {
+   ProgID := RegRead("HKEY_CURRENT_USER\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice", "Progid")
+} catch {
+   ProgID := RegRead("HKEY_CURRENT_USER\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice\ProgId", "Progid")
+}
+
 Browser := "msedge.exe"
 if (ProgID = "ChromeHTML")
    Browser := "chrome.exe"
@@ -62,6 +72,7 @@ modeTxt := sMode = "web" ? "Web Mode: " : "File Mode: "
 urlDisplay := modeTxt
 minMode := IniRead("HS_Settings.ini", "Settings", "MinMode")
 currentGui := minMode = 1 ? "LiteGui" : "MainGui"
+
 
 ; Check for repo file
 if !FileExist(repo) {
@@ -627,7 +638,15 @@ ActivateLinks(*)
    if (linkArray[linksListbox.value][2] == "*") {
       linkLabel:=linkArray[linksListbox.value][1]
       RegExMatch(linkLabel, "<(.*?)>", &match)
-      ControlChooseString match[1], catListbox
+      ;ControlChooseString match[1], catListbox
+      try {
+         ControlChooseString match[1], catListbox
+         ;editBar.value:=""
+         return
+      } catch {
+         MsgBox 'Category "' match[1] '" not found.'
+         return
+      }
    } else {
       goSearch(linkArray[linksListbox.value][2],0)
    }
@@ -1502,6 +1521,22 @@ EditSettings(*)
          MsgBox "Value should be a number."
          return
       }
+   } else if (search[2] ~= "i)t.{0,1}xt") {
+      newTxtPt := search[3]
+      try
+      {
+         newTxtPt := Integer(newTxtPt)
+         IniWrite "1", "HS_Settings.ini", "Settings", "CustomTxtSize"
+         IniWrite newTxtPt, "HS_Settings.ini", "Settings", "TxtSize"
+      } catch TypeError {
+         if (newTxtPt ~= "i)def.{0,4}")
+            IniWrite "0", "HS_Settings.ini", "Settings", "CustomTxtSize"
+         else if (newTxtPt ~= "i)cust.{0,2}")
+            IniWrite "1", "HS_Settings.ini", "Settings", "CustomTxtSize"   
+         else
+            MsgBox "Value should be a number."
+         return
+      }
    } else {
       MsgBox "Invalid settings option."
    }
@@ -1511,6 +1546,10 @@ SetTheme(*)
 {
    themeSel := IniRead("HS_Settings.ini", "Settings", "DkMd")
    opSel := IniRead("HS_Settings.ini", "Settings", "Opacity")
+   txtPt := IniRead("HS_Settings.ini", "Settings", "TxtSize")
+   txtCust := IniRead("HS_Settings.ini", "Settings", "CustomTxtSize")
+   if (txtCust == 1)
+      %currentGui%.setFont("s" txtPt)
    if (themeSel == 1) {
       global guiFont := "cWhite"
       %currentGui%.BackColor := ("c404040")
@@ -1628,8 +1667,12 @@ CheckSettings(*)
    
    prevVer := IniRead("HS_Settings.ini", "Version", "CurrentVersion")
 
-   if (prevVer == "0.2.2") {
-      FileAppend("`nDirRepo=HFR_Master.csv`nSearchMode=web","HS_Settings.ini")
+   switch lastSettingArray[1]
+   {
+      case "Opacity":
+         FileAppend("`nDirRepo=HFR_Master.csv`nSearchMode=web`nCustomTxtSize=0`nTxtSize=9","HS_Settings.ini")
+      case "SearchMode":
+         FileAppend("`nCustomTxtSize=0`nTxtSize=9","HS_Settings.ini")
    }
 
    IniWrite(version, "HS_Settings.ini","Version","CurrentVersion")
@@ -1680,6 +1723,8 @@ Jump=1
 Repository=HSR_Master.csv
 DirRepo=HFR_Master.csv
 SearchMode=web
+CustomTxtSize=0
+TxtSize=9
    )", "HS_Settings.ini"
 }
 
@@ -1797,14 +1842,14 @@ SetMonitorBounds(guiH, guiW)
    MonitorGetWorkArea ActiveMon, &mwaLeft, &mwaTop, &mwaRight, &mwaBottom
    
    ; add multiplication factor to adjust for monitor resolution
-   adj := A_ScreenDPI/96
-   xAdj:=(guiW/2)*adj
-   yAdj:=(guiH/2)*adj
+   global DPIadj := A_ScreenDPI/96
+   xAdj:=(guiW/2)*DPIadj
+   yAdj:=(guiH/2)*DPIadj
    xPos:=mouseX - xAdj
    yPos:=mouseY - yAdj
-   buff := 15*adj
-   Final_x := jump==1 ? max(mwaLeft, min(xPos, mwaRight-(guiW*adj))) : ((((mwaRight - mwaLeft) / 2) + mwaLeft)-xAdj)
-	Final_y := jump==1 ? max(mwaTop, min(yPos, mwaBottom-buff-(guiH*adj))) : ((((mwaBottom - mwaTop) / 2) + mwaTop)-yAdj)
+   buff := 15*DPIadj
+   Final_x := jump==1 ? max(mwaLeft, min(xPos, mwaRight-(guiW*DPIadj))) : ((((mwaRight - mwaLeft) / 2) + mwaLeft)-xAdj)
+	Final_y := jump==1 ? max(mwaTop, min(yPos, mwaBottom-buff-(guiH*DPIadj))) : ((((mwaBottom - mwaTop) / 2) + mwaTop)-yAdj)
    return [Final_x, Final_y]
 }
 
