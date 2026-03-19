@@ -13,10 +13,11 @@ SendMode "Input"  ; Recommended for new scripts due to its superior speed and re
 SetWorkingDir A_ScriptDir  ; Ensures a consistent starting directory.
 #SingleInstance force
 CoordMode "Mouse"
+;DetectHiddenWindows true
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ; UPDATE VERSION NUMBER 
-version:="0.3.2"        
+version:="0.3.3"        
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Use default browser
@@ -31,25 +32,27 @@ try {
    ProgID := RegRead("HKEY_CURRENT_USER\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice\ProgId", "Progid")
 }
 
-Browser := "msedge.exe"
+
+browser := "msedge.exe"
 if (ProgID = "ChromeHTML")
-   Browser := "chrome.exe"
+   browser := "chrome.exe"
 if (ProgID ~= "FirefoxURL.*")
-   Browser := "firefox.exe"
+   browser := "firefox.exe"
 if (ProgID = "BraveHTML")
-   Browser := "brave.exe"
+   browser := "brave.exe"
+
 
 ; Initialize global variables
 lastIndex:=1
 lastLinkIndex:=1
 mouseKeep:=0
-todayQuick := FormatTime(, "yyMMdd")
-controlColor := ""
-urlTxtColor := ""
-guiFont := ""
-UsrIn := ""
-linkArray := []
-linkString := ""
+todayQuick:=FormatTime(, "yyMMdd")
+controlColor:=""
+urlTxtColor:=""
+guiFont:=""
+UsrIn:=""
+linkArray:=[]
+linkString:=""
 mouseX:=""
 mouseY:=""
 hsrDup:=0
@@ -72,7 +75,7 @@ modeTxt := sMode = "web" ? "Web Mode: " : "File Mode: "
 urlDisplay := modeTxt
 minMode := IniRead("HS_Settings.ini", "Settings", "MinMode")
 currentGui := minMode = 1 ? "LiteGui" : "MainGui"
-
+setBrowser := 0
 
 ; Check for repo file
 if !FileExist(repo) {
@@ -333,22 +336,37 @@ goSearch(searchQuery,override)
    global sMode
    global linkArray
    if (sMode = "web" && override != 2 || override = 1) { ; Search web
-      ;;;;;Adapted from this thread: https://www.autohotkey.com/board/topic/13404-google-search-on-highlighted-text/
-      if (searchQuery != "" && searchQuery != " "){
+      ;;;;; Adapted from this thread: https://www.autohotkey.com/board/topic/13404-google-search-on-highlighted-text/
+      closeTab := 0
+      if (searchQuery != "" && searchQuery != " ") {
          searchQuery := StrReplace(searchQuery, "`n`r", A_Space)
          searchQuery := Trim(searchQuery)
          searchQuery := StrReplace(searchQuery, "\", "`%5C")
          searchQuery := StrReplace(searchQuery, A_Space, "+")
          searchQuery := StrReplace(searchQuery, "`%", "`%25")
-         If InStr(searchQuery, ".")
-         {
-            If InStr(searchQuery, "+")
-               Run browser " " searchEngine searchQuery  
-            else
-               Run browser " " searchQuery 
-         } else
+
+         ;;; Fix for issue where Brave wants to revert to an open window on a different virtual desktop
+         if (browser == "brave.exe" && not WinExist("ahk_exe brave.exe")) {
+            Run browser
+            closeTab := 1
+         }
+         else
+            WinActivate "ahk_exe brave.exe"
+
+         if (InStr(searchQuery, ".") && !InStr(searchQuery, "+"))
+            Run browser " " searchQuery
+         else
             Run browser " " searchEngine searchQuery
+         
+         ;;; Close the extra tab created by the Brave fix
+         if (closeTab == 1) {
+            WinWait "ahk_exe brave.exe"
+            send "^1"
+            send "^w"
+         }
+
          DestroyGui(0)
+
       }
    } else if (sMode = "dir" && override != 1 || override = 2) { ; Search files
       if (searchQuery != "" && searchQuery != " ") {
