@@ -13,7 +13,6 @@ SendMode "Input"  ; Recommended for new scripts due to its superior speed and re
 SetWorkingDir A_ScriptDir  ; Ensures a consistent starting directory.
 #SingleInstance force
 CoordMode "Mouse"
-;DetectHiddenWindows true
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ; UPDATE VERSION NUMBER 
@@ -333,24 +332,26 @@ goSearch(searchQuery,override)
    ;   0 = pass based on search mode (sMode)
    ;   1 = always open in web
    ;   2 = always open as folder
+
    global sMode
    global linkArray
    if (sMode = "web" && override != 2 || override = 1) { ; Search web
       ;;;;; Adapted from this thread: https://www.autohotkey.com/board/topic/13404-google-search-on-highlighted-text/
       closeTab := 0
-      if (searchQuery != "" && searchQuery != " ") {
+      if (searchQuery ~= "^=.*") {
+         Run SubStr(searchQuery, 2)
+      } else if (searchQuery != "" && searchQuery != " " && !RegExMatch(searchQuery, "^\&.*") && searchQuery) {
          searchQuery := StrReplace(searchQuery, "`n`r", A_Space)
          searchQuery := Trim(searchQuery)
          searchQuery := StrReplace(searchQuery, "\", "`%5C")
          searchQuery := StrReplace(searchQuery, A_Space, "+")
          searchQuery := StrReplace(searchQuery, "`%", "`%25")
 
-         ;;; Fix for issue where Brave wants to revert to an open window on a different virtual desktop
+         ;;; Fix for issue where Brave wants to revert to an open window on a different virtual desktop - q.v. https://github.com/brave/brave-browser/issues/52077
          if (browser == "brave.exe" && not WinExist("ahk_exe brave.exe")) {
             Run browser
             closeTab := 1
-         }
-         else
+         } else
             WinActivate "ahk_exe brave.exe"
 
          if (InStr(searchQuery, ".") && !InStr(searchQuery, "+"))
@@ -364,10 +365,10 @@ goSearch(searchQuery,override)
             send "^1"
             send "^w"
          }
-
-         DestroyGui(0)
-
       }
+
+      DestroyGui(0)
+
    } else if (sMode = "dir" && override != 1 || override = 2) { ; Search files
       if (searchQuery != "" && searchQuery != " ") {
          searchQuery := RestoreLinks(searchQuery)
